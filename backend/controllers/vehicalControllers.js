@@ -1,7 +1,7 @@
-const Vehicle = require("../models/vehicals");
+import Vehicle from "../models/vehicals.js";
 
 // Create a new vehicle
-exports.createVehicle = async (req, res) => {
+export const createVehicle = async (req, res) => {
   try {
     const vehicle = await Vehicle.create(req.body);
     res.status(201).json(vehicle);
@@ -11,7 +11,7 @@ exports.createVehicle = async (req, res) => {
 };
 
 // Get all vehicles
-exports.getAllVehicles = async (req, res) => {
+export const getAllVehicles = async (req, res) => {
   try {
     const vehicles = await Vehicle.find();
     res.json(vehicles);
@@ -21,7 +21,7 @@ exports.getAllVehicles = async (req, res) => {
 };
 
 // Get a single vehicle by ID
-exports.getVehicleById = async (req, res) => {
+export const getVehicleById = async (req, res) => {
   try {
     const vehicle = await Vehicle.findById(req.params.id);
     if (!vehicle) return res.status(404).json({ message: "Vehicle not found" });
@@ -32,7 +32,7 @@ exports.getVehicleById = async (req, res) => {
 };
 
 // Update a vehicle
-exports.updateVehicle = async (req, res) => {
+export const updateVehicle = async (req, res) => {
   try {
     const vehicle = await Vehicle.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
@@ -45,7 +45,7 @@ exports.updateVehicle = async (req, res) => {
 };
 
 // Delete a vehicle
-exports.deleteVehicle = async (req, res) => {
+export const deleteVehicle = async (req, res) => {
   try {
     const vehicle = await Vehicle.findByIdAndDelete(req.params.id);
     if (!vehicle) return res.status(404).json({ message: "Vehicle not found" });

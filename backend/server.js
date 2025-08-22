@@ -1,8 +1,9 @@
-const express = require("express");
-const mongoose = require("mongoose");
-const dotenv = require("dotenv");
-const cors = require("cors");
-const morgan = require("morgan");
+import express from "express";
+import mongoose from "mongoose";
+import dotenv from "dotenv";
+import cors from "cors";
+import morgan from "morgan";
+import connectDB from "./config/db.js";
 
 // Load environment variables from .env
 dotenv.config();
@@ -15,19 +16,6 @@ app.use(express.json()); // Parse JSON bodies
 app.use(morgan("dev")); // Log requests
 
 // MongoDB connection
-const connectDB = async () => {
-  try {
-    await mongoose.connect(process.env.MONGO_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-    console.log("MongoDB connected");
-  } catch (error) {
-    console.error("MongoDB connection failed:", error.message);
-    process.exit(1);
-  }
-};
-
 connectDB();
 
 // Basic route for testing
@@ -36,8 +24,8 @@ app.get("/", (req, res) => {
 });
 
 // Import routes
-const routeRoutes = require("./routes/routeRoutes");
-const vehicleRoutes = require("./routes/vehicalRoutes");
+import routeRoutes from "./routes/routeRoutes.js";
+import vehicleRoutes from "./routes/vehicalRoutes.js";
 
 // Use routes
 app.use("/api/routes", routeRoutes);

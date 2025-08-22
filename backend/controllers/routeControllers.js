@@ -1,7 +1,7 @@
-const Route = require("../models/routes");
+import Route from "../models/routes.js";
 
 // Create a new route
-exports.createRoute = async (req, res) => {
+export const createRoute = async (req, res) => {
   try {
     const route = await Route.create(req.body);
     res.status(201).json(route);
@@ -11,7 +11,7 @@ exports.createRoute = async (req, res) => {
 };
 
 // Get all routes
-exports.getAllRoutes = async (req, res) => {
+export const getAllRoutes = async (req, res) => {
   try {
     const routes = await Route.find();
     res.json(routes);
@@ -21,7 +21,7 @@ exports.getAllRoutes = async (req, res) => {
 };
 
 // Get a single route by ID
-exports.getRouteById = async (req, res) => {
+export const getRouteById = async (req, res) => {
   try {
     const route = await Route.findById(req.params.id);
     if (!route) return res.status(404).json({ message: "Route not found" });
@@ -32,7 +32,7 @@ exports.getRouteById = async (req, res) => {
 };
 
 // Update a route
-exports.updateRoute = async (req, res) => {
+export const updateRoute = async (req, res) => {
   try {
     const route = await Route.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
@@ -45,7 +45,7 @@ exports.updateRoute = async (req, res) => {
 };
 
 // Delete a route
-exports.deleteRoute = async (req, res) => {
+export const deleteRoute = async (req, res) => {
   try {
     const route = await Route.findByIdAndDelete(req.params.id);
     if (!route) return res.status(404).json({ message: "Route not found" });
