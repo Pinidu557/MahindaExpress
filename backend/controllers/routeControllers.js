@@ -13,7 +13,21 @@ export const createRoute = async (req, res) => {
 // Get all routes
 export const getAllRoutes = async (req, res) => {
   try {
-    const routes = await Route.find();
+    const { startLocation, endLocation, routeNumber, vehicalStatus } =
+      req.query;
+
+    //build filter objects dynamically
+    let filter = {};
+
+    if (startLocation)
+      filter.startLocation = { $regex: startLocation, $options: "i" };
+    if (endLocation)
+      filter.endLocation = { $regex: endLocation, $options: "i" };
+    if (routeNumber)
+      filter.routeNumber = { $regex: routeNumber, $options: "i" };
+    if (vehicalStatus) filter.vehicalStatus = vehicalStatus;
+
+    const routes = await Route.find(filter);
     res.json(routes);
   } catch (error) {
     res.status(500).json({ message: error.message });
