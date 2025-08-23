@@ -8,10 +8,10 @@ import {
   deleteRoute,
 } from "../controllers/routeControllers.js";
 
-router.post("/", createRoute);
-router.get("/", getAllRoutes);
-router.get("/:id", getRouteById);
-router.put("/:id", updateRoute);
-router.delete("/:id", deleteRoute);
+router.post("/", createRoute); // Create a new route
+router.get("/", getAllRoutes); // Get all routes
+router.get("/:id", getRouteById); // Get a single route by ID
+router.put("/:id", updateRoute); // Update a route
+router.delete("/:id", deleteRoute); // Delete a route
 
 export default router;

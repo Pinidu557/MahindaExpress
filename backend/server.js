@@ -5,6 +5,10 @@ import cors from "cors";
 import morgan from "morgan";
 import connectDB from "./config/db.js";
 
+// Import routes
+import routeRoutes from "./routes/routeRoutes.js";
+import vehicleRoutes from "./routes/vehicalRoutes.js";
+
 // Load environment variables from .env
 dotenv.config();
 
@@ -22,10 +26,6 @@ connectDB();
 app.get("/", (req, res) => {
   res.send("Bus Management Backend is running...");
 });
-
-// Import routes
-import routeRoutes from "./routes/routeRoutes.js";
-import vehicleRoutes from "./routes/vehicalRoutes.js";
 
 // Use routes
 app.use("/api/routes", routeRoutes);
