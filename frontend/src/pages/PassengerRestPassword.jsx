@@ -89,7 +89,7 @@ const PassengerLogin = () => {
               <p className="text-center mb-6 text-md">
                 Enter your registered email to reset your account
               </p>
-              <div className="mb-4 flex items-center gap-3 w-full px-3 py-3.5 rounded-full bg-[#333A5C]">
+              <div className="mb-2 flex items-center gap-3 w-full px-3 py-3.5 rounded-full bg-[#333A5C]">
                 <img src={assets.mail_icon} alt="" />
                 <input
                   className="bg-transparent outline-none text-white w-full"

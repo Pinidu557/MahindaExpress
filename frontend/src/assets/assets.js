@@ -10,6 +10,12 @@ import loginimaage from "./loginimage.png";
 import megirl from "./me_girl.jpg";
 import melogo4 from "./melogo4.svg";
 import arrow_white from "./arrow_white.svg";
+import herobg from "./herobg.png";
+import hero_bg_edit from "./hero_bg_edit.png";
+import topjimg1 from "./topjimg1.png";
+import ampara_journey from "./ampara_journey.jpg";
+import badulla_journey from "./badulla_journey.jpg";
+import facebooklogo from "./facebooklogo.png";
 
 export const assets = {
   arrow_icon,
@@ -24,4 +30,10 @@ export const assets = {
   megirl,
   melogo4,
   arrow_white,
+  herobg,
+  hero_bg_edit,
+  topjimg1,
+  ampara_journey,
+  badulla_journey,
+  facebooklogo,
 };

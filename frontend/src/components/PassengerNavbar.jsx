@@ -40,8 +40,13 @@ const PassengerNavbar = () => {
   };
 
   return (
-    <div className="w-full flex justify-between items-center p-4  absolute top-0 sm:p-6 sm:px-24">
+    <div className="w-full flex justify-between items-center p-4 absolute top-0 sm:p-6 sm:px-24">
       <img src={assets.melogo4} alt="" className="w-60 " />
+      <ul className="list-none hidden md:flex gap-10 text-white font-semibold mr-auto ml-10 text-lg">
+        <li className="cursor-pointer">Journeys</li>
+        <li className="cursor-pointer">About Us</li>
+        <li className="cursor-pointer">Contact Us</li>
+      </ul>
       {userData ? (
         <div className="w-8 h-8 flex justify-center items-center rounded-full bg-white text-black relative group font-bold">
           {userData.name[0].toUpperCase()}
