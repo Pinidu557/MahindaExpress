@@ -13,7 +13,7 @@ export const createVehicle = async (req, res) => {
 // Get all vehicles
 export const getAllVehicles = async (req, res) => {
   try {
-    const vehicles = await Vehicle.find();
+    const vehicles = await Vehicle.find().populate("assignedRouteId");
     res.json(vehicles);
   } catch (error) {
     res.status(500).json({ message: error.message });
