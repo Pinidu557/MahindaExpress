@@ -16,6 +16,10 @@ import topjimg1 from "./topjimg1.png";
 import ampara_journey from "./ampara_journey.jpg";
 import badulla_journey from "./badulla_journey.jpg";
 import facebooklogo from "./facebooklogo.png";
+import mebus from "./mebus.jpg";
+import auimg from "./auimg.jpg";
+import mission from "./mission.jpg";
+import missionfinal from "./missionfinal.jpg";
 
 export const assets = {
   arrow_icon,
@@ -36,4 +40,8 @@ export const assets = {
   ampara_journey,
   badulla_journey,
   facebooklogo,
+  mebus,
+  auimg,
+  mission,
+  missionfinal,
 };

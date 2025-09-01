@@ -9,6 +9,7 @@ import {
   Clock,
 } from "lucide-react";
 import Footer from "../components/Footer";
+import { useNavigate } from "react-router-dom";
 
 const PassengerJourney = () => {
   const journeys = [
@@ -75,10 +76,12 @@ const PassengerJourney = () => {
     alert(`Searching trains from ${from} to ${to} on ${date}`);
   };
 
+  const navigate = useNavigate();
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-slate-900">
       <PassengerNavbar />
-      <div className="bg-gray-900 text-white p-7 rounded-xl border border-white flex  items-center justify-center gap-4 mt-30 w-[76.5%]">
+      <div className="bg-gray-900 text-white p-7 rounded-xl border border-white flex  items-center justify-center gap-4 mt-35 w-[76.5%]">
         {/* From */}
         <form
           onSubmit={handleSearch}
@@ -203,7 +206,7 @@ const PassengerJourney = () => {
               {/* Right Section */}
               <div className="flex flex-col  items-end gap-6">
                 <span
-                  className={`px-3 py-2 rounded-lg text-sm ${
+                  className={`px-2   py-2 rounded-lg text-sm ${
                     journey.availability === "Available"
                       ? "bg-green-700 font-bold"
                       : "bg-red-700 font-semibold"
@@ -218,7 +221,10 @@ const PassengerJourney = () => {
                     <Clock size={20} />
                     Timetable
                   </button>
-                  <button className="bg-indigo-600 flex items-center justify-center gap-1 px-4 py-2 rounded-lg hover:bg-indigo-700 cursor-pointer">
+                  <button
+                    onClick={() => navigate("/journeys/checkout")}
+                    className="bg-indigo-600 flex items-center justify-center gap-1 px-4 py-2 rounded-lg hover:bg-indigo-700 cursor-pointer"
+                  >
                     Book Now
                     <MoveRight size={20} className=" text-white font-bold" />
                   </button>
