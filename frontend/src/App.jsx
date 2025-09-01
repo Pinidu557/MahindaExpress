@@ -1,5 +1,8 @@
 import React from "react";
-import { Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import Dashboard from "./pages/Dashboard";
+import RoutesPage from "./pages/RoutesPage";
+import VehiclesPage from "./pages/VehiclesPage";
 import PassengerHome from "./pages/PassengerHome";
 import PassengerLogin from "./pages/PassengerLogin";
 import PassengerEmailVerify from "./pages/PassengerEmailVerify";
@@ -18,6 +21,9 @@ export const App = () => {
         <Route path="/email-verify" element={<PassengerEmailVerify />} />
         <Route path="/reset-password" element={<PassengerRestPassword />} />
         <Route path="/journeys" element={<PassengerJourney />} />
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/routes" element={<RoutesPage />} />
+        <Route path="/vehicles" element={<VehiclesPage />} />
       </Routes>
     </div>
   );
