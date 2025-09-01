@@ -1,38 +1,28 @@
 import express from "express";
-import mongoose from "mongoose";
-import dotenv from "dotenv";
 import cors from "cors";
-import morgan from "morgan";
-import connectDB from "./config/db.js";
-
-// Import routes
+import dotenv from "dotenv/config";
+import cookieParser from "cookie-parser";
+import connectDB from "./config/mongodb.js";
+import userRouter from "./Routes/userRoutes.js";
+import userDetailsRouter from "./Routes/userDetailsRoutes.js";
 import routeRoutes from "./routes/routeRoutes.js";
 import vehicleRoutes from "./routes/vehicalRoutes.js";
 
-// Load environment variables from .env
-dotenv.config();
-
 const app = express();
-
-// Middleware
-app.use(cors());
-app.use(express.json()); // Parse JSON bodies
-app.use(morgan("dev")); // Log requests
-
-// MongoDB connection
+const port = process.env.PORT || 4000;
 connectDB();
 
-// Basic route for testing
-app.get("/", (req, res) => {
-  res.send("Bus Management Backend is running...");
-});
+const allowedOrigins = ["http://localhost:5173"];
 
-// Use routes
+app.use(express.json());
+app.use(cookieParser());
+app.use(cors({ origin: allowedOrigins, credentials: true }));
+
+//API Endpoints
+app.get("/", (req, res) => res.send("API Worrking ON Fire"));
+app.use("/api/auth", userRouter);
+app.use("/api/user", userDetailsRouter);
 app.use("/api/routes", routeRoutes);
 app.use("/api/vehicles", vehicleRoutes);
 
-// Start the server
-const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+app.listen(port, () => console.log(`server started on PORT:${port}`));
