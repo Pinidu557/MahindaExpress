@@ -13,6 +13,7 @@ const PassengerLogin = () => {
 
   const [email, setEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [isEmailSent, setIsEmailSent] = useState(false);
   const [otp, setOtp] = useState(0);
   const [isOtpSubmited, setIsOtpSubmited] = useState(false);
@@ -55,7 +56,7 @@ const PassengerLogin = () => {
     try {
       const { data } = await axios.post(
         backendUrl + "/api/auth/reset-password",
-        { email, otp, newPassword }
+        { email, otp, newPassword, confirmPassword }
       );
       data.success ? toast.success(data.message) : toast.error(data.message);
       data.success && navigate("/login");
@@ -152,6 +153,17 @@ const PassengerLogin = () => {
                   placeholder="New Password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="mb-4 flex items-center gap-3 w-full px-3 py-3.5 rounded-full bg-[#333A5C]">
+                <img src={assets.mail_icon} alt="" />
+                <input
+                  className="bg-transparent outline-none text-white w-full"
+                  type="password"
+                  placeholder="Confirm Password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
                   required
                 />
               </div>

@@ -1,9 +1,41 @@
-import React from "react";
+import React, { useContext, useState } from "react";
 import { Phone, Mail, MapPin } from "lucide-react";
 import PassengerNavbar from "../components/PassengerNavbar";
 import Footer from "../components/Footer";
+import { AppContent } from "../context/AppContext";
+import axios from "axios";
+import { toast } from "react-toastify";
 
 const Contactus = () => {
+  const { backendUrl } = useContext(AppContent);
+
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phonenumber, setPhoneNumber] = useState("");
+  const [contactmessage, setContactMessage] = useState("");
+
+  const onSubmitHandler = async (e) => {
+    e.preventDefault();
+    try {
+      const { data } = await axios.post(
+        backendUrl + "/api/contacts/contactus",
+        {
+          name,
+          email,
+          phonenumber,
+          contactmessage,
+        }
+      );
+      data.success ? toast.success(data.message) : toast.error(data.message);
+      setName("");
+      setEmail("");
+      setPhoneNumber("");
+      setContactMessage("");
+    } catch (error) {
+      toast.error(error.message);
+    }
+  };
+
   return (
     <div className="bg-slate-900 text-white min-h-screen overflow-x-hidden">
       <PassengerNavbar />
@@ -26,26 +58,41 @@ const Contactus = () => {
           </p>
 
           {/* Contact Form */}
-          <form className="space-y-4 bg-slate-800 p-6 rounded-xl shadow-md">
+          <form
+            className="space-y-4 bg-slate-800 p-6 rounded-xl shadow-md"
+            onSubmit={onSubmitHandler}
+          >
             <input
               type="text"
               placeholder="Your Name"
-              className="w-full px-4 py-3 rounded-lg bg-slate-900 border border-slate-700 focus:border-blue-500 focus:ring focus:ring-blue-400 outline-none"
+              className="w-full px-4 py-3 rounded-lg bg-slate-900 border border-slate-700
+               focus:border-blue-500 focus:ring focus:ring-blue-400 outline-none"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
             />
             <input
               type="email"
               placeholder="Email"
-              className="w-full px-4 py-3 rounded-lg bg-slate-900 border border-slate-700 focus:border-blue-500 focus:ring focus:ring-blue-400 outline-none"
+              className=" w-full px-4 py-3 rounded-lg bg-slate-900 border  border-slate-700
+              focus:border-blue-500 focus:ring focus:ring-blue-400 outline-none"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
             />
             <input
               type="tel"
               placeholder="Phone Number"
-              className="w-full px-4 py-3 rounded-lg bg-slate-900 border border-slate-700 focus:border-blue-500 focus:ring focus:ring-blue-400 outline-none"
+              className=" w-full px-4 py-3 rounded-lg bg-slate-900 border border-slate-700
+              focus:border-blue-500 focus:ring focus:ring-blue-400 outline-none"
+              value={phonenumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
             />
             <textarea
               rows="4"
               placeholder="Leave a Message"
-              className="w-full px-4 py-3 rounded-lg bg-slate-900 border border-slate-700 focus:border-blue-500 focus:ring focus:ring-blue-400 outline-none"
+              className="w-full px-4 py-3 rounded-lg bg-slate-900 border  border-slate-700
+              focus:border-blue-500 focus:ring focus:ring-blue-400 outline-none"
+              value={contactmessage}
+              onChange={(e) => setContactMessage(e.target.value)}
             ></textarea>
             <button className="w-full py-3 bg-indigo-500 hover:bg-indigo-600 rounded-lg font-semibold text-white transition cursor-pointer">
               Send Us A Message

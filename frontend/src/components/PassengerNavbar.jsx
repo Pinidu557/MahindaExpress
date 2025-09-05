@@ -60,7 +60,9 @@ const PassengerNavbar = () => {
       </ul>
       {userData ? (
         <div className="w-8 h-8 flex justify-center items-center rounded-full bg-white text-black relative group font-bold">
-          {userData.name[0].toUpperCase()}
+          {userData && userData.firstname
+            ? userData.firstname[0].toUpperCase()
+            : ""}
           <div className="absolute hidden group-hover:block top-0 right-0 z-10 text-black rounded pt-10">
             <ul className="list-none m-0 p-2 bg-gray-100 text-sm ">
               {!userData.isAccountVerified && (

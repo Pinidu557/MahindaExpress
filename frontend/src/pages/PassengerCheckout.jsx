@@ -40,7 +40,7 @@ const SeatBooking = () => {
         Select Seats & Fill Form
       </h1>
       <h1 className="text-2xl font-bold mb-2 text-center">
-        Panadura - Kandy 17 NCG Express - Super Luxury
+        Ampara - Colombo 22 Mahinda Express - Super Luxury
       </h1>
       <div className="flex flex-row gap-10 items-center justify-center min-h-screen w-[90%] mx-auto mb-10">
         {/* Seat Layout */}
@@ -125,6 +125,9 @@ const SeatBooking = () => {
         <div className="grid grid-cols-1 gap-4 text-sm w-[10%] flex-shrink-0">
           <div className="flex items-center gap-2">
             <span className="w-5 h-5 bg-pink-500 rounded"></span> Ladies Only
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-5 h-5 bg-blue-600 rounded"></span> Gents Only
           </div>
           <div className="flex items-center gap-2">
             <span className="w-5 h-5 bg-yellow-300 rounded"></span> Not Provided
