@@ -48,10 +48,10 @@ export const JourneySection = () => {
         <div className="rounded-2xl shadow-lg overflow-hidden flex flex-col bg-gradient-to-b from-indigo-800 to-purple-800">
           <div className="p-6 flex flex-col justify-between h-full">
             <div>
-              <h3 className="text-lg font-bold text-white mb-3">
+              <h3 className="text-lg font-bold text-white mb-2">
                 Colombo → Badulla: Highland Gateway
               </h3>
-              <p className="text-gray-100 text-sm ">
+              <p className="text-gray-100 text-sm">
                 Ride from the city’s edge to the heart of the hill country.
                 Scenic journey to Badulla — perfect for seasonal retreats and
                 cool mountain air.
@@ -60,7 +60,7 @@ export const JourneySection = () => {
             <img
               src={assets.badulla_journey}
               alt="Moratuwa → Jaffna"
-              className="object-cover w-full h-40 rounded-2xl"
+              className="object-cover w-full h-40 rounded-2xl mb-2"
             />
             <button className="px-5 py-2 rounded-full text-sm font-medium border border-white text-white hover:bg-gray-300 hover:text-indigo-600 cursor-pointer">
               Book Now →
@@ -72,7 +72,7 @@ export const JourneySection = () => {
         <div className="rounded-2xl shadow-lg overflow-hidden flex flex-col bg-gradient-to-r from-indigo-600 to-indigo-900">
           <div className="p-6 flex flex-col justify-between h-full">
             <div>
-              <h3 className="text-lg font-bold text-white mb-3">
+              <h3 className="text-lg font-bold text-white mb-2">
                 Colombo → Ampara: Eastern Escapey
               </h3>
               <p className="text-gray-100 text-sm ">
@@ -83,7 +83,7 @@ export const JourneySection = () => {
             <img
               src={assets.ampara_journey}
               alt="Moratuwa → Jaffna"
-              className="object-cover w-full h-40 rounded-2xl"
+              className="object-cover w-full h-40 rounded-2xl mb-2"
             />
             <button className="px-5 py-2 rounded-full text-sm font-medium border border-white text-white hover:bg-gray-300 hover:text-purple-600 cursor-pointer">
               Book Now →

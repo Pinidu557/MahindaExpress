@@ -8,7 +8,7 @@ import {
   sendResetOtp,
   sendVerifyOtp,
   verifyEmail,
-} from "../Controllers/userController.js";
+} from "../controllers/userController.js";
 import userAuth from "../middleware/userAuth.js";
 
 const userRouter = express.Router();

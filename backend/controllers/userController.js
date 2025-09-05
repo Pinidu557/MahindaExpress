@@ -9,9 +9,9 @@ import {
 } from "../config/emailTemplate.js";
 
 export const register = async (req, res) => {
-  const { name, email, password } = req.body;
+  const { firstname, lastname, email, password } = req.body;
 
-  if (!name || !email || !password) {
+  if (!firstname || !lastname || !email || !password) {
     return res.json({ success: false, message: "Missing Details" });
   }
 
@@ -26,7 +26,8 @@ export const register = async (req, res) => {
     const hasedPassword = await bycrypt.hash(password, 10);
 
     const newUser = new userModel({
-      name: name,
+      firstName: firstname,
+      lastName: lastname,
       email: email,
       password: hasedPassword,
     });
@@ -228,8 +229,8 @@ export const sendResetOtp = async (req, res) => {
 
 //reset user password
 export const resetPassword = async (req, res) => {
-  const { email, otp, newPassword } = req.body;
-  if (!email || !otp || !newPassword) {
+  const { email, otp, newPassword, confirmPassword } = req.body;
+  if (!email || !otp || !newPassword || !confirmPassword) {
     return res.json({ success: false, message: "Missing Details" });
   }
   try {
@@ -243,6 +244,10 @@ export const resetPassword = async (req, res) => {
     if (user.resetOtpExpireAt < Date.now()) {
       return res.json({ success: false, message: "Otp is expired" });
     }
+    if (newPassword != confirmPassword) {
+      return res.json({ success: false, message: "Re enter confirm password" });
+    }
+
     const hashedPassword = await bycrypt.hash(newPassword, 10);
     user.password = hashedPassword;
     user.resetOtp = "";

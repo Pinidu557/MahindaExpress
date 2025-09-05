@@ -40,16 +40,29 @@ const PassengerNavbar = () => {
   };
 
   return (
-    <div className="w-full flex justify-between items-center p-4 absolute top-0 sm:p-6 sm:px-24">
-      <img src={assets.melogo4} alt="" className="w-60 " />
+    <div className="w-full flex justify-between items-center p-4 absolute top-0 sm:p-6 sm:px-24 bg-slate-950">
+      <img
+        src={assets.melogo4}
+        alt=""
+        className="w-60 cursor-pointer"
+        onClick={() => navigate("/")}
+      />
       <ul className="list-none hidden md:flex gap-10 text-white font-semibold mr-auto ml-10 text-lg">
-        <li className="cursor-pointer">Journeys</li>
-        <li className="cursor-pointer">About Us</li>
-        <li className="cursor-pointer">Contact Us</li>
+        <li className="cursor-pointer" onClick={() => navigate("/journeys")}>
+          Journeys
+        </li>
+        <li className="cursor-pointer" onClick={() => navigate("/aboutus")}>
+          About Us
+        </li>
+        <li className="cursor-pointer" onClick={() => navigate("/contactus")}>
+          Contact Us
+        </li>
       </ul>
       {userData ? (
         <div className="w-8 h-8 flex justify-center items-center rounded-full bg-white text-black relative group font-bold">
-          {userData.name[0].toUpperCase()}
+          {userData && userData.firstname
+            ? userData.firstname[0].toUpperCase()
+            : ""}
           <div className="absolute hidden group-hover:block top-0 right-0 z-10 text-black rounded pt-10">
             <ul className="list-none m-0 p-2 bg-gray-100 text-sm ">
               {!userData.isAccountVerified && (
