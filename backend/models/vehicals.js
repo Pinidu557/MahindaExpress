@@ -19,9 +19,17 @@ const vehicleSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
-    routeStatus: {
+    mileage: {
+      type: Number,
+      required: true,
+    },
+    year: {
+      type: Number,
+      required: true,
+    },
+    vehicleStatus: {
       type: String,
-      enum: ["Available", "On Route", "Under Maintenance"],
+      enum: ["Available", "unavailable", "Under Maintenance"],
       default: "Available",
     },
     assignedRouteId: {
