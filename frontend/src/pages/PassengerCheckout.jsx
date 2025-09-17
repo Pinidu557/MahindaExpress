@@ -1,8 +1,18 @@
-import React, { useState } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import PassengerNavbar from "../components/PassengerNavbar";
 import Footer from "../components/Footer";
+import { AppContent } from "../context/AppContext";
+import axios from "axios";
+import { toast } from "react-toastify";
+import { useLocation, useNavigate } from "react-router-dom";
+import { MapPin, Calendar, Clock, Bus, Loader2 } from "lucide-react";
 
 const SeatBooking = () => {
+  const { backendUrl } = useContext(AppContent);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const routeData = location.state || {};
+
   // Sample seat layout (rows with seat numbers)
   const seatLayout = [
     [1, 2, null, 3, 4],
@@ -18,109 +28,344 @@ const SeatBooking = () => {
     [37, 38, 39, 40, 41, 42],
   ];
 
-  // Sample booked seats
-  const bookedSeats = [7, 12, 15, 16];
+  // Replace static booked seats with dynamic state
+  const [bookedSeats, setBookedSeats] = useState([]);
+  const [isLoadingSeats, setIsLoadingSeats] = useState(true);
 
-  const [selectedSeats, setSelectedSeats] = useState([]);
+  const [seats, setSeats] = useState([]);
+  const [PassengerName, setPassengerName] = useState("");
+  const [mobileNumber, setMobileNumber] = useState("");
+  const [email, setEmail] = useState("");
+  const [boardingPoint, setBoardingPoint] = useState("");
+  const [dropoffPoint, setDropoffPoint] = useState("");
+  const [gender, setGender] = useState("Male");
+  const [journeyDate, setJourneyDate] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Set default journey details from route data
+  useEffect(() => {
+    if (routeData.startLocation && routeData.endLocation) {
+      setBoardingPoint(routeData.startLocation);
+      setDropoffPoint(routeData.endLocation);
+    }
+    if (routeData.journeyDate) {
+      setJourneyDate(routeData.journeyDate);
+    }
+  }, [routeData]);
+
+  // Fetch booked seats when route or journey date changes
+  useEffect(() => {
+    const fetchBookedSeats = async () => {
+      // Only fetch if we have both routeId and journeyDate
+      if (!routeData.routeId || !journeyDate) {
+        setIsLoadingSeats(false);
+        return;
+      }
+
+      setIsLoadingSeats(true);
+      try {
+        const { data } = await axios.get(
+          `${backendUrl}/api/bookings/booked-seats`,
+          {
+            params: {
+              routeId: routeData.routeId,
+              journeyDate: journeyDate,
+            },
+          }
+        );
+
+        if (data.success) {
+          setBookedSeats(data.bookedSeats);
+          console.log("Booked seats:", data.bookedSeats);
+        } else {
+          toast.error("Could not load seat availability");
+        }
+      } catch (error) {
+        console.error("Error fetching booked seats:", error);
+        toast.error("Failed to check seat availability");
+      } finally {
+        setIsLoadingSeats(false);
+      }
+    };
+
+    fetchBookedSeats();
+  }, [backendUrl, routeData.routeId, journeyDate]);
+
+  // Handle seat selection
   const toggleSeat = (seat) => {
     if (!seat || bookedSeats.includes(seat)) return;
-
-    if (selectedSeats.includes(seat)) {
-      setSelectedSeats(selectedSeats.filter((s) => s !== seat));
+    if (seats.includes(seat)) {
+      setSeats(seats.filter((s) => s !== seat));
     } else {
-      setSelectedSeats([...selectedSeats, seat]);
+      setSeats([...seats, seat]);
     }
   };
+
+  // Calculate total fare
+  const totalFare = seats.length * (routeData.fare || 895);
+
+  // Handle form submission
+  const onSubmieHandler = async (e) => {
+    e.preventDefault();
+
+    if (seats.length === 0) {
+      toast.error("Please select at least one seat.");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // Format data according to backend requirements
+      const bookingData = {
+        routeId: routeData.routeId || "64f9a3b3b6e351d5f13e3a20", // Fallback to dummy ID if not provided
+        passengerName: PassengerName,
+        mobileNumber: mobileNumber,
+        email: email || "no-email@example.com", // Provide fallback for optional field
+        seats: seats,
+        boardingPoint: boardingPoint,
+        dropoffPoint: dropoffPoint,
+        gender: gender,
+        journeyDate: new Date(journeyDate).toISOString(),
+        totalFare: totalFare,
+        status: "pending",
+      };
+
+      const { data } = await axios.post(
+        `${backendUrl}/api/bookings/checkout`,
+        bookingData
+      );
+
+      if (data.success) {
+        toast.success("Booking successful! Redirecting to payment");
+        // Keep isSubmitting true during navigation to show loading state
+        setTimeout(() => {
+          navigate("/journeys/checkout/payment");
+        }, 1500);
+      } else {
+        toast.error(data.message || "Something went wrong");
+        setIsSubmitting(false); // Only reset if error
+      }
+    } catch (error) {
+      console.error("Booking error:", error);
+      toast.error(error.response?.data?.message || "Failed to create booking");
+      setIsSubmitting(false); // Only reset if error
+    }
+  };
+
+  // Format the journey date for display
+  const formattedJourneyDate = routeData.journeyDate
+    ? new Date(routeData.journeyDate).toLocaleDateString("en-US", {
+        weekday: "short",
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      })
+    : "";
 
   return (
     <div className="min-h-screen bg-slate-900 text-white flex flex-col items-center justify-center">
       <PassengerNavbar />
-      <h1 className="text-3xl font-bold mb-4 mt-35 text-center text-blue-400">
+
+      {/* Journey Details Banner */}
+      {routeData.startLocation && (
+        <div className="bg-slate-800 w-[80%] p-6 rounded-xl mt-35 mb-8 shadow-lg">
+          <h1 className="text-2xl font-bold mb-4 text-center text-slate-200">
+            {routeData.startLocation} to {routeData.endLocation} -{" "}
+            {routeData.busType || "Express Bus"}
+          </h1>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+            <div className="flex items-center gap-2">
+              <MapPin className="text-indigo-400" size={20} />
+              <div>
+                <p className="text-gray-400 text-xs">From</p>
+                <p className="font-semibold">{routeData.startLocation}</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <MapPin className="text-indigo-400" size={20} />
+              <div>
+                <p className="text-gray-400 text-xs">To</p>
+                <p className="font-semibold">{routeData.endLocation}</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Calendar className="text-indigo-400" size={20} />
+              <div>
+                <p className="text-gray-400 text-xs">Date</p>
+                <p className="font-semibold">{formattedJourneyDate}</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Clock className="text-indigo-400" size={20} />
+              <div>
+                <p className="text-gray-400 text-xs">Departure Time</p>
+                <p className="font-semibold">{routeData.departureTime}</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Clock className="text-indigo-400" size={20} />
+              <div>
+                <p className="text-gray-400 text-xs">Arrival Time</p>
+                <p className="font-semibold">{routeData.arrivalTime}</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Bus className="text-indigo-400" size={20} />
+              <div>
+                <p className="text-gray-400 text-xs">Fare</p>
+                <p className="font-semibold">LKR {routeData.fare}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <h1 className="text-3xl font-bold mb-4 mt-4 text-center text-blue-400">
         Select Seats & Fill Form
       </h1>
-      <h1 className="text-2xl font-bold mb-2 text-center">
-        Ampara - Colombo 22 Mahinda Express - Super Luxury
-      </h1>
+
       <div className="flex flex-row gap-10 items-center justify-center min-h-screen w-[90%] mx-auto mb-10">
         {/* Seat Layout */}
         <div className="bg-slate-800 p-5 rounded-2xl shadow-lg w-[30%] flex-shrink-0">
           <div className="flex justify-center mb-4">
             <span className="bg-slate-700 px-4 py-2 rounded-lg">Front</span>
           </div>
-          <div className="grid gap-3">
-            {seatLayout.map((row, rowIndex) => (
-              <div key={rowIndex} className="flex justify-center gap-3">
-                {row.map((seat, index) =>
-                  seat ? (
-                    <button
-                      key={index}
-                      onClick={() => toggleSeat(seat)}
-                      className={`w-10 h-10 rounded-lg text-sm font-bold flex items-center justify-center cursor-pointer
-                        ${
-                          bookedSeats.includes(seat)
-                            ? "bg-red-800 cursor-not-allowed"
-                            : selectedSeats.includes(seat)
-                            ? "bg-indigo-500"
-                            : "bg-green-600 hover:bg-green-500"
-                        }`}
-                      disabled={bookedSeats.includes(seat)}
-                    >
-                      {seat}
-                    </button>
-                  ) : (
-                    <div key={index} className="w-10 h-10"></div>
-                  )
-                )}
-              </div>
-            ))}
-          </div>
+
+          {isLoadingSeats ? (
+            // Show loading spinner while fetching seats
+            <div className="flex flex-col items-center justify-center p-10">
+              <Loader2
+                className="animate-spin text-indigo-500 mb-2"
+                size={30}
+              />
+              <p className="text-gray-300">Loading seat availability...</p>
+            </div>
+          ) : (
+            <div className="grid gap-3">
+              {seatLayout.map((row, rowIndex) => (
+                <div key={rowIndex} className="flex justify-center gap-3">
+                  {row.map((seat, index) =>
+                    seat ? (
+                      <button
+                        key={index}
+                        onClick={() => toggleSeat(seat)}
+                        className={`w-10 h-10 rounded-lg text-sm font-bold flex items-center justify-center cursor-pointer
+                          ${
+                            bookedSeats.includes(seat)
+                              ? "bg-red-800 cursor-not-allowed"
+                              : seats.includes(seat)
+                              ? "bg-indigo-500"
+                              : "bg-green-600 hover:bg-green-500"
+                          }`}
+                        disabled={bookedSeats.includes(seat)}
+                      >
+                        {seat}
+                      </button>
+                    ) : (
+                      <div key={index} className="w-10 h-10"></div>
+                    )
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
+
         {/* Seat Details Form */}
         <div className="bg-slate-800 p-6 rounded-2xl shadow-lg w-[35%] flex-shrink-0">
           <h2 className="text-xl font-semibold mb-4">Seat Details</h2>
           <p className="mb-2">
             Seats:{" "}
             <span className="text-indigo-400 font-semibold">
-              {selectedSeats.join(", ") || "None"}
+              {seats.join(", ") || "None"}
             </span>
           </p>
-          <p className="mb-4">Total: {selectedSeats.length * 895} LKR</p>
+          <p className="mb-4">
+            Total: <span className="text-green-400 font-bold">{totalFare}</span>{" "}
+            LKR
+          </p>
 
-          <form className="flex flex-col gap-8">
+          <form className="flex flex-col gap-8" onSubmit={onSubmieHandler}>
             <input
               type="text"
               placeholder="Passenger Name"
               className="px-3 py-2 rounded-lg bg-slate-700 text-white placeholder-gray-400 focus:outline-none"
+              value={PassengerName}
+              onChange={(e) => setPassengerName(e.target.value)}
+              required
             />
             <input
               type="text"
               placeholder="Mobile Number"
               className="px-3 py-2 rounded-lg bg-slate-700 text-white placeholder-gray-400 focus:outline-none"
+              value={mobileNumber}
+              onChange={(e) => setMobileNumber(e.target.value)}
+              required
             />
             <input
               type="email"
               placeholder="Email (Optional)"
               className="px-3 py-2 rounded-lg bg-slate-700 text-white placeholder-gray-400 focus:outline-none"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
             />
             <input
               type="text"
               placeholder="Boarding Point"
               className="px-3 py-2 rounded-lg bg-slate-700 text-white placeholder-gray-400 focus:outline-none"
+              value={boardingPoint}
+              onChange={(e) => setBoardingPoint(e.target.value)}
+              required
             />
             <input
               type="text"
               placeholder="Drop off point"
               className="px-3 py-2 rounded-lg bg-slate-700 text-white placeholder-gray-400 focus:outline-none"
+              value={dropoffPoint}
+              onChange={(e) => setDropoffPoint(e.target.value)}
+              required
+            />
+            <select
+              className="px-3 py-2 rounded-lg bg-slate-700 text-white placeholder-gray-400 focus:outline-none"
+              value={gender}
+              onChange={(e) => setGender(e.target.value)}
+              required
+            >
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+            </select>
+            <input
+              type="date"
+              placeholder="Journey Date"
+              className="px-3 py-2 rounded-lg bg-slate-700 text-white placeholder-gray-400 focus:outline-none"
+              value={journeyDate}
+              onChange={(e) => setJourneyDate(e.target.value)}
+              required
             />
             <button
-              type="button"
-              className="bg-gradient-to-r from-indigo-500 to-indigo-900  py-2 rounded-lg font-semibold mt-3 cursor-pointer"
+              type="submit"
+              disabled={isSubmitting || seats.length === 0}
+              className="bg-gradient-to-r from-indigo-500 to-indigo-700 py-2 rounded-lg font-semibold mt-3 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center"
             >
-              Continue to Pay
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="animate-spin mr-2" size={20} />
+                  Processing...
+                </>
+              ) : (
+                "Continue to Pay"
+              )}
             </button>
           </form>
         </div>
+
         {/* Legend */}
         <div className="grid grid-cols-1 gap-4 text-sm w-[10%] flex-shrink-0">
           <div className="flex items-center gap-2">

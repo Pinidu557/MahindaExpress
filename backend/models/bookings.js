@@ -41,6 +41,10 @@ const bookingSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    gender: {
+      type: String,
+      required: true,
+    },
     journeyDate: {
       type: Date,
       required: true,

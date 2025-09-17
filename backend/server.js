@@ -3,12 +3,13 @@ import cors from "cors";
 import dotenv from "dotenv/config";
 import cookieParser from "cookie-parser";
 import connectDB from "./config/mongodb.js";
-import userRouter from "./Routes/userRoutes.js";
+import userRouter from "./routes/userRoutes.js";
 import userDetailsRouter from "./Routes/userDetailsRoutes.js";
 import routeRoutes from "./routes/routeRoutes.js";
 import vehicleRoutes from "./routes/vehicalRoutes.js";
 import contactRouter from "./routes/contactRoutes.js";
 import bookingRouter from "./routes/bookingRoutes.js";
+import router from "./routes/paymentRoutes.js";
 
 const app = express();
 const port = process.env.PORT || 4000;
@@ -28,5 +29,6 @@ app.use("/api/routes", routeRoutes);
 app.use("/api/vehicles", vehicleRoutes);
 app.use("/api/contacts", contactRouter);
 app.use("/api/bookings", bookingRouter);
+app.use("/api/payments", router);
 
 app.listen(port, () => console.log(`server started on PORT:${port}`));

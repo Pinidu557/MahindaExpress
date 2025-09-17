@@ -189,9 +189,20 @@ export const verifyEmail = async (req, res) => {
 //check if user authenticated
 export const isAuthenticated = async (req, res) => {
   try {
-    return res.json({ success: true, message: "User is authenticated" });
+    // If we got here, userAuth middleware has already verified the token
+    // and set req.userId, so we know the user is authenticated
+    return res.json({
+      success: true,
+      message: "User is authenticated",
+      isAuthenticated: true, // Add this explicit flag
+      userId: req.userId, // Include user ID in response
+    });
   } catch (error) {
-    return res.json({ success: false, message: error.message });
+    return res.json({
+      success: false,
+      message: error.message,
+      isAuthenticated: false, // Add this explicit flag
+    });
   }
 };
 
