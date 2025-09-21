@@ -84,8 +84,8 @@ const getBookedSeats = async (req, res) => {
     const bookings = await Booking.find({
       routeId: routeId,
       journeyDate: { $gte: startDate, $lte: endDate },
-      // Only consider active bookings
-      status: { $nin: ["cancelled"] },
+      // Only consider confirmed (paid) bookings
+      status: "paid", // Only mark seats as booked if payment is complete
     });
 
     // Extract all seat numbers from the bookings
@@ -108,5 +108,60 @@ const getBookedSeats = async (req, res) => {
   }
 };
 
-// Export both functions
-export { createBooking, getBookedSeats };
+// Update booking details
+const updateBooking = async (req, res) => {
+  try {
+    const { bookingId } = req.params;
+    const updateData = req.body;
+
+    // Find booking by ID and update with new data
+    const updatedBooking = await Booking.findByIdAndUpdate(
+      bookingId,
+      updateData,
+      { new: true }
+    );
+
+    if (!updatedBooking) {
+      return res.status(404).json({
+        success: false,
+        message: "Booking not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Booking updated successfully",
+      booking: updatedBooking,
+    });
+  } catch (error) {
+    console.error("Error updating booking:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to update booking",
+      error: error.message,
+    });
+  }
+};
+
+// Get booking by ID
+const getBookingById = async (req, res) => {
+  try {
+    const { bookingId } = req.params;
+    const booking = await Booking.findById(bookingId);
+    if (!booking) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Booking not found" });
+    }
+    return res.status(200).json({ success: true, booking });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch booking",
+      error: error.message,
+    });
+  }
+};
+
+// Export all functions
+export { createBooking, getBookedSeats, updateBooking, getBookingById };

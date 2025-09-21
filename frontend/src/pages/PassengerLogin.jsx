@@ -1,12 +1,13 @@
 import React, { useContext, useState } from "react";
 import { assets } from "../assets/assets";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { AppContent } from "../context/AppContext.jsx";
 import axios from "axios";
 import { toast } from "react-toastify";
 
 const PassengerLogin = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { backendUrl, setIsLoggedin, getUserData } = useContext(AppContent);
 
   const [state, setState] = useState("Sign Up");
@@ -41,9 +42,16 @@ const PassengerLogin = () => {
         if (data.success) {
           setIsLoggedin(true);
           getUserData();
-          navigate("/");
-        } else {
-          toast.error(data.message);
+          // Check if we need to redirect to a specific page after login
+          if (location.state?.redirectAfterLogin) {
+            // Navigate to the redirect path with the booking data
+            navigate(location.state.redirectAfterLogin, {
+              state: location.state.bookingData,
+            });
+          } else {
+            // Default navigation after login
+            navigate("/");
+          }
         }
       }
     } catch (error) {

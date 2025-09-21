@@ -101,6 +101,9 @@ export const login = async (req, res) => {
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
+    user.isLoggedIn = true;
+    await user.save();
+
     return res.json({ success: true, message: "Login successful" });
   } catch (error) {
     res.json({
@@ -112,11 +115,28 @@ export const login = async (req, res) => {
 
 export const logout = async (req, res) => {
   try {
+    // Clear the auth cookie
     res.clearCookie("token", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
     });
+
+    // Get user ID from token to update isLoggedIn status
+    const { token } = req.cookies;
+    if (token) {
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        if (decoded && decoded.id) {
+          // Update user's isLoggedIn status
+          await userModel.findByIdAndUpdate(decoded.id, { isLoggedIn: false });
+        }
+      } catch (error) {
+        // Token verification error - just continue with logout
+        console.error("Token verification error during logout:", error.message);
+      }
+    }
+
     return res.json({ success: true, message: "Logout successful" });
   } catch (error) {
     return res.json({

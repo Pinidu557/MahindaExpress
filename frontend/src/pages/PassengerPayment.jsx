@@ -11,31 +11,35 @@ import { toast } from "react-toastify";
 import PassengerNavbar from "../components/PassengerNavbar";
 import Footer from "../components/Footer";
 import { AppContent } from "../context/AppContext";
-import { useNavigate } from "react-router-dom";
-import { Loader2 } from "lucide-react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { Loader2, ArrowLeft } from "lucide-react";
 
 // Replace with your Stripe publishable key
 const stripePromise = loadStripe(
   "pk_test_51S7pbeH2L7zJmMhaG2fcAE2ZPGybRNDg9h9apuKsP0wp3O5P3xekY7fVtoE0nL2RopZjowUxtEdYkVmps3qmIfvj00UNRsKkOc"
 );
 
-const CheckoutForm = () => {
+const CheckoutForm = ({ bookingDetails }) => {
   const stripe = useStripe();
   const elements = useElements();
   const navigate = useNavigate();
+  const location = useLocation();
   const [isProcessing, setIsProcessing] = useState(false);
+  const { backendUrl } = useContext(AppContent);
+
+  // Get bookingId and routeData from navigation state
+  const routeData = location.state || {};
+  const bookingId = routeData.bookingId;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!stripe || !elements) return;
 
-    // Show processing state
     setIsProcessing(true);
 
     const result = await stripe.confirmPayment({
       elements,
       confirmParams: {
-        // Make sure both URLs match exactly
         return_url:
           window.location.origin + "/journeys/checkout/payment/payment-success",
       },
@@ -45,20 +49,53 @@ const CheckoutForm = () => {
     setIsProcessing(false);
 
     if (result.error) {
-      // Show error to your customer
       toast.error(result.error.message);
     } else if (
       result.paymentIntent &&
       result.paymentIntent.status === "succeeded"
     ) {
-      // Payment succeeded without redirect (less common)
-      toast.success("Payment successful! Redirecting...");
+      // Update booking status to paid
+      try {
+        await axios.put(`${backendUrl}/api/bookings/${bookingId}`, {
+          status: "paid",
+        });
+      } catch (error) {
+        console.error("Error updating booking status:", error);
+      }
 
-      // Redirect to success page after a brief delay
+      toast.success("Payment successful!");
       setTimeout(() => {
         navigate("/journeys/checkout/payment/payment-success");
-      }, 1500); // 1.5 second delay to show the success message
+      }, 1500);
     }
+  };
+
+  // Back to booking details handler
+  const handleBackToCheckout = () => {
+    // Pass ALL original route data plus booking ID
+    navigate("/journeys/checkout", {
+      state: {
+        ...routeData, // Keep all original route data
+        bookingId,
+        // Override with any data from booking details if available
+        ...(bookingDetails &&
+          bookingDetails.boardingPoint && {
+            startLocation: bookingDetails.boardingPoint,
+          }),
+        ...(bookingDetails &&
+          bookingDetails.dropoffPoint && {
+            endLocation: bookingDetails.dropoffPoint,
+          }),
+        ...(bookingDetails &&
+          bookingDetails.journeyDate && {
+            journeyDate: bookingDetails.journeyDate,
+          }),
+        ...(bookingDetails &&
+          bookingDetails.routeId && {
+            routeId: bookingDetails.routeId,
+          }),
+      },
+    });
   };
 
   return (
@@ -75,7 +112,7 @@ const CheckoutForm = () => {
           options={{
             layout: { type: "tabs" },
             fields: {
-              billingDetails: "auto", // Let Stripe collect billing details automatically
+              billingDetails: "auto",
             },
           }}
         />
@@ -94,15 +131,48 @@ const CheckoutForm = () => {
             "Pay Now"
           )}
         </button>
+
+        <button
+          type="button"
+          onClick={handleBackToCheckout}
+          className="bg-gray-700 hover:bg-gray-600 text-white py-2 rounded-lg font-semibold mt-2 flex items-center justify-center cursor-pointer"
+        >
+          <ArrowLeft size={18} className="mr-2" />
+          Back to Edit Details
+        </button>
       </form>
     </div>
   );
 };
 
-const PassengerPayment = ({ amount = 895, bookingId = "" }) => {
+const PassengerPayment = ({ amount = 895 }) => {
   const { backendUrl } = useContext(AppContent);
+  const location = useLocation();
+  const routeData = location.state || {};
+  const bookingId = routeData.bookingId;
   const [clientSecret, setClientSecret] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [bookingDetails, setBookingDetails] = useState({});
+
+  // Fetch booking details when page loads
+  useEffect(() => {
+    const fetchBookingDetails = async () => {
+      if (bookingId) {
+        try {
+          const { data } = await axios.get(
+            `${backendUrl}/api/bookings/${bookingId}`
+          );
+          if (data.success) {
+            setBookingDetails(data.booking);
+          }
+        } catch (error) {
+          console.error("Error fetching booking details:", error);
+        }
+      }
+    };
+
+    fetchBookingDetails();
+  }, [bookingId, backendUrl]);
 
   useEffect(() => {
     async function fetchClientSecret() {
@@ -111,7 +181,7 @@ const PassengerPayment = ({ amount = 895, bookingId = "" }) => {
         const { data } = await axios.post(
           backendUrl + "/api/payments/create-payment-intent",
           {
-            amount,
+            amount: bookingDetails.totalFare || amount,
             bookingId,
           }
         );
@@ -124,9 +194,8 @@ const PassengerPayment = ({ amount = 895, bookingId = "" }) => {
       }
     }
     fetchClientSecret();
-  }, [amount, bookingId, backendUrl]);
+  }, [amount, bookingId, backendUrl, bookingDetails.totalFare]);
 
-  // Simplified options - removing problematic configuration
   const options = {
     clientSecret,
     appearance: {
@@ -157,7 +226,7 @@ const PassengerPayment = ({ amount = 895, bookingId = "" }) => {
         </div>
       ) : clientSecret ? (
         <Elements stripe={stripePromise} options={options}>
-          <CheckoutForm />
+          <CheckoutForm bookingDetails={bookingDetails} />
         </Elements>
       ) : (
         <div className="flex flex-col items-center justify-center h-[70vh]">

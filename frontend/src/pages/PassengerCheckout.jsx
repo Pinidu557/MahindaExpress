@@ -13,6 +13,9 @@ const SeatBooking = () => {
   const navigate = useNavigate();
   const routeData = location.state || {};
 
+  // Track bookingId for update
+  const [bookingId, setBookingId] = useState(routeData.bookingId || null);
+
   // Sample seat layout (rows with seat numbers)
   const seatLayout = [
     [1, 2, null, 3, 4],
@@ -28,7 +31,6 @@ const SeatBooking = () => {
     [37, 38, 39, 40, 41, 42],
   ];
 
-  // Replace static booked seats with dynamic state
   const [bookedSeats, setBookedSeats] = useState([]);
   const [isLoadingSeats, setIsLoadingSeats] = useState(true);
 
@@ -51,17 +53,19 @@ const SeatBooking = () => {
     if (routeData.journeyDate) {
       setJourneyDate(routeData.journeyDate);
     }
+    // If bookingId is passed from navigation, set it
+    if (routeData.bookingId) {
+      setBookingId(routeData.bookingId);
+    }
   }, [routeData]);
 
   // Fetch booked seats when route or journey date changes
   useEffect(() => {
     const fetchBookedSeats = async () => {
-      // Only fetch if we have both routeId and journeyDate
       if (!routeData.routeId || !journeyDate) {
         setIsLoadingSeats(false);
         return;
       }
-
       setIsLoadingSeats(true);
       try {
         const { data } = await axios.get(
@@ -73,23 +77,46 @@ const SeatBooking = () => {
             },
           }
         );
-
         if (data.success) {
           setBookedSeats(data.bookedSeats);
-          console.log("Booked seats:", data.bookedSeats);
         } else {
           toast.error("Could not load seat availability");
         }
       } catch (error) {
-        console.error("Error fetching booked seats:", error);
-        toast.error("Failed to check seat availability");
+        toast.error("Failed to check seat availability", error.message);
       } finally {
         setIsLoadingSeats(false);
       }
     };
-
     fetchBookedSeats();
   }, [backendUrl, routeData.routeId, journeyDate]);
+
+  // Fetch booking details if bookingId exists (for update)
+  useEffect(() => {
+    const fetchBookingDetails = async () => {
+      if (!bookingId) return;
+      try {
+        const { data } = await axios.get(
+          `${backendUrl}/api/bookings/${bookingId}`
+        );
+        if (data.success) {
+          setPassengerName(data.booking.passengerName);
+          setMobileNumber(data.booking.mobileNumber);
+          setEmail(data.booking.email);
+          setSeats(data.booking.seats);
+          setBoardingPoint(data.booking.boardingPoint);
+          setDropoffPoint(data.booking.dropoffPoint);
+          setGender(data.booking.gender);
+          setJourneyDate(
+            new Date(data.booking.journeyDate).toISOString().split("T")[0]
+          );
+        }
+      } catch (error) {
+        toast.error("Failed to fetch booking details", error.message);
+      }
+    };
+    fetchBookingDetails();
+  }, [bookingId, backendUrl]);
 
   // Handle seat selection
   const toggleSeat = (seat) => {
@@ -104,7 +131,7 @@ const SeatBooking = () => {
   // Calculate total fare
   const totalFare = seats.length * (routeData.fare || 895);
 
-  // Handle form submission
+  // Handle form submission (create or update booking)
   const onSubmieHandler = async (e) => {
     e.preventDefault();
 
@@ -116,12 +143,11 @@ const SeatBooking = () => {
     setIsSubmitting(true);
 
     try {
-      // Format data according to backend requirements
       const bookingData = {
-        routeId: routeData.routeId || "64f9a3b3b6e351d5f13e3a20", // Fallback to dummy ID if not provided
+        routeId: routeData.routeId || "64f9a3b3b6e351d5f13e3a20",
         passengerName: PassengerName,
         mobileNumber: mobileNumber,
-        email: email || "no-email@example.com", // Provide fallback for optional field
+        email: email || "no-email@example.com",
         seats: seats,
         boardingPoint: boardingPoint,
         dropoffPoint: dropoffPoint,
@@ -131,31 +157,48 @@ const SeatBooking = () => {
         status: "pending",
       };
 
-      const { data } = await axios.post(
-        `${backendUrl}/api/bookings/checkout`,
-        bookingData
-      );
+      let data;
+      if (bookingId) {
+        // Update booking
+        const response = await axios.put(
+          `${backendUrl}/api/bookings/${bookingId}`,
+          bookingData
+        );
+        data = response.data;
+      } else {
+        // Create booking
+        const response = await axios.post(
+          `${backendUrl}/api/bookings/checkout`,
+          bookingData
+        );
+        data = response.data;
+        if (data.success && data.booking?._id) {
+          setBookingId(data.booking._id);
+        }
+      }
 
       if (data.success) {
         toast.success("Booking successful! Redirecting to payment");
-        // Keep isSubmitting true during navigation to show loading state
         setTimeout(() => {
-          navigate("/journeys/checkout/payment");
+          navigate("/journeys/checkout/payment", {
+            state: { bookingId: bookingId || data.booking._id },
+          });
         }, 1500);
       } else {
         toast.error(data.message || "Something went wrong");
-        setIsSubmitting(false); // Only reset if error
+        setIsSubmitting(false);
       }
     } catch (error) {
-      console.error("Booking error:", error);
-      toast.error(error.response?.data?.message || "Failed to create booking");
-      setIsSubmitting(false); // Only reset if error
+      toast.error(
+        error.response?.data?.message || "Failed to create/update booking"
+      );
+      setIsSubmitting(false);
     }
   };
 
   // Format the journey date for display
-  const formattedJourneyDate = routeData.journeyDate
-    ? new Date(routeData.journeyDate).toLocaleDateString("en-US", {
+  const formattedJourneyDate = journeyDate
+    ? new Date(journeyDate).toLocaleDateString("en-US", {
         weekday: "short",
         year: "numeric",
         month: "short",
@@ -352,7 +395,7 @@ const SeatBooking = () => {
             <button
               type="submit"
               disabled={isSubmitting || seats.length === 0}
-              className="bg-gradient-to-r from-indigo-500 to-indigo-700 py-2 rounded-lg font-semibold mt-3 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center"
+              className="bg-blue-600 py-2 rounded-lg font-semibold mt-3 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center"
             >
               {isSubmitting ? (
                 <>

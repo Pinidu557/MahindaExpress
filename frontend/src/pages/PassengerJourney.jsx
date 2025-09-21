@@ -189,8 +189,7 @@ const PassengerJourney = () => {
   }, [routes.length]);
 
   // Updated function to handle booking button click - without authentication check
-  const handleBookNowClick = (route, timeSlot, journeyDateToUse) => {
-    // Create booking data object
+  const handleBookNowClick = async (route, timeSlot, journeyDateToUse) => {
     const bookingData = {
       routeId: route._id || route.id,
       startLocation: route.startLocation,
@@ -203,11 +202,66 @@ const PassengerJourney = () => {
       busType: "Super Luxury",
     };
 
-    // Go directly to checkout without authentication check
-    navigate("/journeys/checkout", {
-      state: bookingData,
-    });
+    try {
+      const { data } = await axios.get(backendUrl + "/api/user/data", {
+        withCredentials: true,
+      });
+
+      console.log("Auth response:", data); // For debugging
+
+      // Check if API call was successful and user is logged in
+      if (data.success && data.userData && data.userData.isLoggedIn) {
+        navigate("/journeys/checkout", { state: bookingData });
+      } else {
+        toast.info("Please log in to book tickets");
+        navigate("/login", {
+          state: {
+            redirectAfterLogin: "/journeys/checkout",
+            bookingData,
+          },
+        });
+      }
+    } catch (error) {
+      console.error("Authentication error:", error);
+      toast.error("Authentication check failed. Please login.");
+
+      navigate("/login", {
+        state: {
+          redirectAfterLogin: "/journeys/checkout",
+          bookingData,
+        },
+      });
+    }
   };
+  //   try {
+  //     // Check authentication status from backend
+  //     const { data } = await axios.get(`${backendUrl}/api/auth/check-auth`, {
+  //       withCredentials: true,
+  //     });
+
+  //     if (data.isAuthenticated) {
+  //       // User is logged in, go to checkout
+  //       navigate("/journeys/checkout", { state: bookingData });
+  //     } else {
+  //       // Not logged in, redirect to login
+  //       toast.info("Please log in to book tickets");
+  //       navigate("/login", {
+  //         state: {
+  //           redirectAfterLogin: "/journeys/checkout",
+  //           bookingData,
+  //         },
+  //       });
+  //     }
+  //   } catch (error) {
+  //     toast.error("Authentication check failed. Please login.", error.message);
+  //     navigate("/login", {
+  //       state: {
+  //         redirectAfterLogin: "/journeys/checkout",
+  //         bookingData,
+  //       },
+  //     });
+  //   }
+  // };
 
   // Determine which routes to display
   const routesToDisplay = searchPerformed ? filteredRoutes : routes;
@@ -338,8 +392,16 @@ const PassengerJourney = () => {
 
               // Get the schedule for this route (or use default schedule)
               const scheduleForRoute = routeSchedules[routeKey] || [
-                { departure: "06:00 AM", arrival: "10:00 AM", duration: "4h" },
-                { departure: "02:00 PM", arrival: "06:00 PM", duration: "4h" },
+                {
+                  departure: "06:00 AM",
+                  arrival: "10:00 AM",
+                  duration: "4h",
+                },
+                {
+                  departure: "02:00 PM",
+                  arrival: "06:00 PM",
+                  duration: "4h",
+                },
               ];
 
               // Get the selected time for this route
@@ -438,7 +500,7 @@ const PassengerJourney = () => {
                     </span>
                     <p className="text-2xl font-bold">
                       <span className="mr-3">LKR</span>
-                      {route.fare || "2000"}
+                      {route.fare}
                     </p>
 
                     <div className="flex flex-col gap-2">
