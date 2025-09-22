@@ -411,7 +411,7 @@ const SeatBooking = () => {
 
         {/* Legend */}
         <div className="grid grid-cols-1 gap-4 text-sm w-[10%] flex-shrink-0">
-          <div className="flex items-center gap-2">
+          {/* <div className="flex items-center gap-2">
             <span className="w-5 h-5 bg-pink-500 rounded"></span> Ladies Only
           </div>
           <div className="flex items-center gap-2">
@@ -423,7 +423,7 @@ const SeatBooking = () => {
           <div className="flex items-center gap-2">
             <span className="w-5 h-5 bg-gray-800 rounded"></span> Booking In
             Progress
-          </div>
+          </div> */}
           <div className="flex items-center gap-2">
             <span className="w-5 h-5 bg-green-600 rounded"></span> Available
           </div>

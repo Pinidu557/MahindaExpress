@@ -20,10 +20,10 @@ const PassengerJourney = () => {
   // Define route-specific time schedules
   const routeSchedules = {
     "Colombo-Ampara": [
-      { departure: "08:00 PM", arrival: "10:00 AM", duration: "4h" },
+      { departure: "10:45 AM", arrival: "03:15 PM", duration: "4h" },
     ],
     "Colombo-Anuradhapura": [
-      { departure: "05:00 AM", arrival: "10:00 AM", duration: "4h" },
+      { departure: "07:00 AM", arrival: "01:25 PM", duration: "4h" },
     ],
     // Add more route schedules as needed
   };
@@ -518,7 +518,7 @@ const PassengerJourney = () => {
                             )
                           }
                           className={`flex items-center justify-center gap-1 px-8 py-3 rounded-lg whitespace-nowrap text-md
-                            bg-indigo-700 hover:bg-indigo-800 cursor-pointer`}
+                            bg-indigo-600 cursor-pointer font-semibold`}
                         >
                           {isTimePassed ? (
                             <>
