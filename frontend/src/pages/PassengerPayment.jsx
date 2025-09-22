@@ -65,7 +65,9 @@ const CheckoutForm = ({ bookingDetails }) => {
 
       toast.success("Payment successful!");
       setTimeout(() => {
-        navigate("/journeys/checkout/payment/payment-success");
+        navigate(
+          `/journeys/checkout/payment/payment-success?booking_id=${bookingId}`
+        );
       }, 1500);
     }
   };

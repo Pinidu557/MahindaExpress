@@ -31,6 +31,7 @@ export const register = async (req, res) => {
       email: email,
       password: hasedPassword,
     });
+    newUser.isLoggedIn = true;
     await newUser.save();
     const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET, {
       expiresIn: "7d",

@@ -10,7 +10,7 @@ const PassengerLogin = () => {
   const location = useLocation();
   const { backendUrl, setIsLoggedin, getUserData } = useContext(AppContent);
 
-  const [state, setState] = useState("Sign Up");
+  const [state, setState] = useState("Login");
   const [firstname, setFirstName] = useState("");
   const [lastname, setLastName] = useState("");
   const [email, setEmail] = useState("");
