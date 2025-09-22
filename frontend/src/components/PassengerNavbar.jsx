@@ -68,14 +68,20 @@ const PassengerNavbar = () => {
               {!userData.isAccountVerified && (
                 <li
                   onClick={sendVerificationOtp}
-                  className="py-1 px-2 hover:bg-gray-200 cursor-pointer whitespace-nowrap"
+                  className="py-1 px-2 hover:bg-gray-200 cursor-pointer whitespace-nowrap mb-1"
                 >
                   Verify Email
                 </li>
               )}
               <li
+                className="py-1 px-2 hover:bg-gray-200 cursor-pointer whitespace-nowrap mb-1"
+                onClick={() => navigate("/passengerDashboard")}
+              >
+                DashBoard
+              </li>
+              <li
                 onClick={logout}
-                className="py-1 px-2 hover:bg-red-600 rounded-[5%] cursor-pointer pr-10  bg-red-500 text-white"
+                className="py-1 px-2 hover:bg-red-600 rounded-[5%] cursor-pointer pr-10  bg-red-500 text-white mt-1"
               >
                 Logout
               </li>

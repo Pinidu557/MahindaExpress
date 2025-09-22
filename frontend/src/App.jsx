@@ -16,6 +16,8 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import PassengerPayment from "./pages/PassengerPayment";
 import PaymentSuccess from "./pages/PaymentSuccess";
+import PassengerDashboard from "./pages/PassengerDashboard";
+import BookingDetails from "./pages/BookingDetails";
 
 export const App = () => {
   return (
@@ -42,6 +44,8 @@ export const App = () => {
           path="/journeys/checkout/payment/payment-success"
           element={<PaymentSuccess />}
         />
+        <Route path="/passengerDashboard" element={<PassengerDashboard />} />
+        <Route path="/booking/:bookingId" element={<BookingDetails />} />
       </Routes>
     </div>
   );

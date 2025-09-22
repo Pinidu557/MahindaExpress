@@ -163,5 +163,60 @@ const getBookingById = async (req, res) => {
   }
 };
 
+// Update the getUserBookings function
+const getUserBookings = async (req, res) => {
+  try {
+    // Get the user ID from the authenticated user or from the URL parameter
+    const userId = req.userId || req.params.userId;
+    const userEmail = req.user ? req.user.email : null;
+
+    console.log("Attempting to fetch bookings for user ID:", userId);
+    console.log("User email from token:", userEmail);
+    console.log("Request params:", req.params);
+
+    if (!userId && !userEmail) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required - no user ID or email available",
+      });
+    }
+
+    // Find all bookings where either:
+    // 1. The userId matches the logged-in user's ID
+    // 2. The email matches the logged-in user's email
+    let query = {};
+    
+    if (userId && userEmail) {
+      query = { $or: [{ userId }, { email: userEmail }] };
+    } else if (userId) {
+      query = { userId };
+    } else if (userEmail) {
+      query = { email: userEmail };
+    }
+    
+    const bookings = await Booking.find(query).sort({ createdAt: -1 });
+    
+    console.log(`Found ${bookings.length} total bookings for user`);
+
+    return res.status(200).json({
+      success: true,
+      bookings,
+    });
+  } catch (error) {
+    console.error("Error fetching user bookings:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch bookings",
+      error: error.message,
+    });
+  }
+};
+
 // Export all functions
-export { createBooking, getBookedSeats, updateBooking, getBookingById };
+export {
+  createBooking,
+  getBookedSeats,
+  updateBooking,
+  getBookingById,
+  getUserBookings,
+};
