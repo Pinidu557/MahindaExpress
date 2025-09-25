@@ -42,7 +42,7 @@ const PassengerAboutus = () => {
             />
             <div className="absolute inset-0  bg-opacity-100 flex flex-col justify-center px-10">
               {/* Title */}
-              <h1 className="text-5xl font-bold text-white ml-13 leading-13 ">
+              <h1 className="text-8xl font-bold text-white ml-43 leading-23 ">
                 Discover <br /> Our Commitment
               </h1>
             </div>

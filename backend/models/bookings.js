@@ -41,6 +41,10 @@ const bookingSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    gender: {
+      type: String,
+      required: true,
+    },
     journeyDate: {
       type: Date,
       required: true,
@@ -51,8 +55,33 @@ const bookingSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["pending", "paid", "cancelled"],
+      enum: [
+        "pending",
+        "paid",
+        "cancelled",
+        "pending_verification",
+        "rejected",
+      ],
       default: "pending",
+    },
+    paymentMethod: {
+      type: String,
+      enum: ["card", "bank_transfer"],
+      default: "card",
+    },
+    bankTransferDetails: {
+      transactionReference: String,
+      payerName: String,
+      paymentDate: Date,
+      totalAmount: Number,
+      receiptPath: String,
+      receiptFilename: String,
+      uploadedAt: Date,
+      approvedAt: Date,
+      approvedBy: String,
+      rejectedAt: Date,
+      rejectedBy: String,
+      rejectionReason: String,
     },
   },
   { timestamps: true }

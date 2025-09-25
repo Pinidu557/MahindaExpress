@@ -31,6 +31,7 @@ export const register = async (req, res) => {
       email: email,
       password: hasedPassword,
     });
+    newUser.isLoggedIn = true;
     await newUser.save();
     const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET, {
       expiresIn: "7d",
@@ -101,6 +102,9 @@ export const login = async (req, res) => {
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
+    user.isLoggedIn = true;
+    await user.save();
+
     return res.json({ success: true, message: "Login successful" });
   } catch (error) {
     res.json({
@@ -112,11 +116,28 @@ export const login = async (req, res) => {
 
 export const logout = async (req, res) => {
   try {
+    // Clear the auth cookie
     res.clearCookie("token", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
     });
+
+    // Get user ID from token to update isLoggedIn status
+    const { token } = req.cookies;
+    if (token) {
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        if (decoded && decoded.id) {
+          // Update user's isLoggedIn status
+          await userModel.findByIdAndUpdate(decoded.id, { isLoggedIn: false });
+        }
+      } catch (error) {
+        // Token verification error - just continue with logout
+        console.error("Token verification error during logout:", error.message);
+      }
+    }
+
     return res.json({ success: true, message: "Logout successful" });
   } catch (error) {
     return res.json({
@@ -189,9 +210,20 @@ export const verifyEmail = async (req, res) => {
 //check if user authenticated
 export const isAuthenticated = async (req, res) => {
   try {
-    return res.json({ success: true, message: "User is authenticated" });
+    // If we got here, userAuth middleware has already verified the token
+    // and set req.userId, so we know the user is authenticated
+    return res.json({
+      success: true,
+      message: "User is authenticated",
+      isAuthenticated: true, // Add this explicit flag
+      userId: req.userId, // Include user ID in response
+    });
   } catch (error) {
-    return res.json({ success: false, message: error.message });
+    return res.json({
+      success: false,
+      message: error.message,
+      isAuthenticated: false, // Add this explicit flag
+    });
   }
 };
 
