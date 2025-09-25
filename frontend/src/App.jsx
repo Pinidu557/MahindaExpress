@@ -1,3 +1,4 @@
+import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
 import RoutesPage from "./pages/RoutesPage";
@@ -20,12 +21,11 @@ import PassengerDashboard from "./pages/PassengerDashboard";
 import BookingDetails from "./pages/BookingDetails";
 import UserManagement from "./pages/UserManagement";
 
-function App() {
+export const App = () => {
   return (
-    <Router>
+    <div>
+      <ToastContainer />
       <Routes>
-        <Route path="/" element={<Dashboard />} />
-
         <Route path="/" element={<PassengerHome />} />
         <Route path="/login" element={<PassengerLogin />} />
         <Route path="/email-verify" element={<PassengerEmailVerify />} />
@@ -54,8 +54,8 @@ function App() {
         <Route path="/booking/:bookingId" element={<BookingDetails />} />
         <Route path="/user-management" element={<UserManagement />} />
       </Routes>
-    </Router>
+    </div>
   );
-}
+};
 
 export default App;
