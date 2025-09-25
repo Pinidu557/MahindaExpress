@@ -8,6 +8,12 @@ import DashboardPage from "./pages/dashboard.jsx";
 import ReportsPage from "./pages/reports.jsx";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import PassengerPayment from "./pages/PassengerPayment";
+import PassengerBankTransfer from "./pages/PassengerBankTransfer";
+import PaymentSuccess from "./pages/PaymentSuccess";
+import PassengerDashboard from "./pages/PassengerDashboard";
+import BookingDetails from "./pages/BookingDetails";
+import UserManagement from "./pages/UserManagement";
 
 const Layout = ({ children }) => {
   return (
@@ -27,6 +33,37 @@ const Layout = ({ children }) => {
         {children}
       </main>
       <ToastContainer position="top-right" autoClose={4000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover theme="colored" />
+    <div>
+      <ToastContainer />
+      <Routes>
+        <Route path="/" element={<PassengerHome />} />
+        <Route path="/login" element={<PassengerLogin />} />
+        <Route path="/email-verify" element={<PassengerEmailVerify />} />
+        <Route path="/reset-password" element={<PassengerRestPassword />} />
+        <Route path="/journeys" element={<PassengerJourney />} />
+        <Route path="aboutus" element={<PassengerAboutus />} />
+        <Route path="/contactus" element={<Contactus />} />
+        <Route path="/journeys/checkout" element={<PassengerCheckout />} />
+        <Route path="/faqs" element={<PassengerFaqs />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/routes" element={<RoutesPage />} />
+        <Route path="/vehicles" element={<VehiclesPage />} />
+        <Route
+          path="/journeys/checkout/payment"
+          element={<PassengerPayment />}
+        />
+        <Route
+          path="/journeys/checkout/bank-transfer"
+          element={<PassengerBankTransfer />}
+        />
+        <Route
+          path="/journeys/checkout/payment/payment-success"
+          element={<PaymentSuccess />}
+        />
+        <Route path="/passengerDashboard" element={<PassengerDashboard />} />
+        <Route path="/booking/:bookingId" element={<BookingDetails />} />
+        <Route path="/user-management" element={<UserManagement />} />
+      </Routes>
     </div>
   );
 };
