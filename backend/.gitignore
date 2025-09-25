@@ -1,11 +1,3 @@
-# Dependencies
 node_modules/
-**/node_modules/
-
-# Package files
+package.json
 package-lock.json
-**/package-lock.json
-
-# Optional: ignore package.json (not usually recommended)
-# package.json
-# **/package.json

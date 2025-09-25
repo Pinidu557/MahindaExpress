@@ -3,12 +3,11 @@ import cors from "cors";
 import dotenv from "dotenv/config";
 import cookieParser from "cookie-parser";
 import connectDB from "./config/mongodb.js";
-import userRouter from "./Routes/userRoutes.js";
-import userDetailsRouter from "./Routes/userDetailsRoutes.js";
-import routeRoutes from "./routes/routeRoutes.js";
-import vehicleRoutes from "./routes/vehicalRoutes.js";
-import contactRouter from "./routes/contactRoutes.js";
-import bookingRouter from "./routes/bookingRoutes.js";
+import vehicleRoutes from "./routes/vehicleRoutes.js";
+import partRoutes from "./routes/partRoutes.js";
+import maintenanceRoutes from "./routes/maintenanceRoutes.js";
+import fuelRoutes from "./routes/fuelRoutes.js";
+
 
 const app = express();
 const port = process.env.PORT || 4000;
@@ -22,11 +21,10 @@ app.use(cors({ origin: allowedOrigins, credentials: true }));
 
 //API Endpoints
 app.get("/", (req, res) => res.send("API Worrking ON Fire"));
-app.use("/api/auth", userRouter);
-app.use("/api/user", userDetailsRouter);
-app.use("/api/routes", routeRoutes);
+
 app.use("/api/vehicles", vehicleRoutes);
-app.use("/api/contacts", contactRouter);
-app.use("/api/bookings", bookingRouter);
+app.use("/api/parts", partRoutes);
+app.use("/api/maintenance", maintenanceRoutes);
+app.use("/api/fuel", fuelRoutes);
 
 app.listen(port, () => console.log(`server started on PORT:${port}`));
