@@ -94,7 +94,7 @@ const Contactus = () => {
               value={contactmessage}
               onChange={(e) => setContactMessage(e.target.value)}
             ></textarea>
-            <button className="w-full py-3 bg-indigo-500 hover:bg-indigo-600 rounded-lg font-semibold text-white transition cursor-pointer">
+            <button className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 rounded-lg font-semibold text-white transition cursor-pointer">
               Send Us A Message
             </button>
           </form>

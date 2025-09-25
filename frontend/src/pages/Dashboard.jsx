@@ -9,7 +9,7 @@ const Dashboard = () => {
       <div className=" flex justify-center p-6">
         <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 w-full max-w-screen-2xl mt-50  ">
           <Link
-            to=""
+            to="/user-management"
             className="p-6 bg-teal-500 text-blue rounded-lg shadow hover:bg-teal-600 transition-colors "
           >
             User Management

@@ -12,14 +12,22 @@ import PassengerNavbar from "../components/PassengerNavbar";
 import Footer from "../components/Footer";
 import { AppContent } from "../context/AppContext";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Loader2, ArrowLeft, MapPin, Calendar, Users } from "lucide-react";
+import {
+  Loader2,
+  ArrowLeft,
+  MapPin,
+  Calendar,
+  Users,
+  CreditCard,
+  Building2,
+} from "lucide-react";
 
 // Replace with your Stripe publishable key
 const stripePromise = loadStripe(
   "pk_test_51S7pbeH2L7zJmMhaG2fcAE2ZPGybRNDg9h9apuKsP0wp3O5P3xekY7fVtoE0nL2RopZjowUxtEdYkVmps3qmIfvj00UNRsKkOc"
 );
 
-const CheckoutForm = ({ bookingDetails }) => {
+const CheckoutForm = ({ bookingDetails, onBack }) => {
   const stripe = useStripe();
   const elements = useElements();
   const navigate = useNavigate();
@@ -81,50 +89,6 @@ const CheckoutForm = ({ bookingDetails }) => {
       year: "numeric",
       month: "short",
       day: "numeric",
-    });
-  };
-
-  // Back to booking details handler with all necessary fields preserved
-  const handleBackToCheckout = () => {
-    // Calculate fare per seat if needed
-    const farePerSeat =
-      bookingDetails.totalFare && bookingDetails.seats?.length
-        ? Math.round(bookingDetails.totalFare / bookingDetails.seats.length)
-        : routeData.fare || 895;
-
-    // Determine departure and arrival time based on route
-    let departureTime = bookingDetails.departureTime || routeData.departureTime;
-    let arrivalTime = bookingDetails.arrivalTime || routeData.arrivalTime; // Declare arrivalTime properly
-
-    if (
-      bookingDetails.boardingPoint === "Colombo" &&
-      bookingDetails.dropoffPoint === "Anuradhapura"
-    ) {
-      departureTime = "07:00 AM";
-      arrivalTime = "01:25 PM";
-    }
-    if (
-      bookingDetails.boardingPoint === "Colombo" &&
-      bookingDetails.dropoffPoint === "Ampara"
-    ) {
-      departureTime = "10:45 AM";
-      arrivalTime = "03:15 PM";
-    }
-
-    // Preserve original route data and enhance with booking details
-    navigate("/journeys/checkout", {
-      state: {
-        ...routeData, // Keep all original route data
-        bookingId: bookingId,
-        startLocation: bookingDetails.boardingPoint || routeData.startLocation,
-        endLocation: bookingDetails.dropoffPoint || routeData.endLocation,
-        journeyDate: bookingDetails.journeyDate || routeData.journeyDate,
-        departureTime: departureTime,
-        arrivalTime: arrivalTime,
-        routeId: bookingDetails.routeId || routeData.routeId,
-        fare: farePerSeat,
-        busType: bookingDetails.busType || routeData.busType || "Express Bus",
-      },
     });
   };
 
@@ -220,11 +184,11 @@ const CheckoutForm = ({ bookingDetails }) => {
 
         <button
           type="button"
-          onClick={handleBackToCheckout}
+          onClick={onBack}
           className="bg-gray-700 hover:bg-gray-600 text-white py-2 rounded-lg font-semibold mt-2 flex items-center justify-center cursor-pointer"
         >
           <ArrowLeft size={18} className="mr-2" />
-          Back to Edit Details
+          Back to Payment Options
         </button>
       </form>
     </div>
@@ -234,12 +198,14 @@ const CheckoutForm = ({ bookingDetails }) => {
 const PassengerPayment = () => {
   const { backendUrl } = useContext(AppContent);
   const location = useLocation();
+  const navigate = useNavigate();
   const routeData = location.state || {};
   const bookingId = routeData.bookingId;
   const [clientSecret, setClientSecret] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [bookingDetails, setBookingDetails] = useState({});
   const [paymentInitialized, setPaymentInitialized] = useState(false);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("");
 
   // Fetch booking details when page loads
   useEffect(() => {
@@ -256,15 +222,17 @@ const PassengerPayment = () => {
           console.error("Error fetching booking details:", error);
         }
       }
+      setIsLoading(false);
     };
 
     fetchBookingDetails();
   }, [bookingId, backendUrl]);
 
-  // Create payment intent only once after booking details are loaded
+  // Create payment intent only when card payment is selected
   useEffect(() => {
     async function fetchClientSecret() {
-      if (!bookingId || paymentInitialized) return;
+      if (!bookingId || paymentInitialized || selectedPaymentMethod !== "card")
+        return;
 
       setIsLoading(true);
       try {
@@ -292,11 +260,88 @@ const PassengerPayment = () => {
       }
     }
 
-    // Only create payment intent if we have booking details and haven't done it yet
-    if (Object.keys(bookingDetails).length > 0 && !paymentInitialized) {
+    // Only create payment intent if we have booking details and card payment is selected
+    if (
+      Object.keys(bookingDetails).length > 0 &&
+      selectedPaymentMethod === "card" &&
+      !paymentInitialized
+    ) {
       fetchClientSecret();
     }
-  }, [bookingId, backendUrl, bookingDetails, paymentInitialized]);
+  }, [
+    bookingId,
+    backendUrl,
+    bookingDetails,
+    paymentInitialized,
+    selectedPaymentMethod,
+  ]);
+
+  // Handle bank transfer option
+  const handleBankTransfer = () => {
+    navigate("/journeys/checkout/bank-transfer", {
+      state: {
+        bookingId,
+        bookingDetails,
+        routeData,
+      },
+    });
+  };
+
+  // Back to booking details handler with all necessary fields preserved
+  const handleBackToCheckout = () => {
+    // Calculate fare per seat if needed
+    const farePerSeat =
+      bookingDetails.totalFare && bookingDetails.seats?.length
+        ? Math.round(bookingDetails.totalFare / bookingDetails.seats.length)
+        : routeData.fare || 895;
+
+    // Determine departure and arrival time based on route
+    let departureTime = bookingDetails.departureTime || routeData.departureTime;
+    let arrivalTime = bookingDetails.arrivalTime || routeData.arrivalTime; // Declare arrivalTime properly
+
+    if (
+      bookingDetails.boardingPoint === "Colombo" &&
+      bookingDetails.dropoffPoint === "Anuradhapura"
+    ) {
+      departureTime = "07:00 AM";
+      arrivalTime = "01:25 PM";
+    }
+    if (
+      bookingDetails.boardingPoint === "Colombo" &&
+      bookingDetails.dropoffPoint === "Ampara"
+    ) {
+      departureTime = "10:45 AM";
+      arrivalTime = "03:15 PM";
+    }
+
+    // Preserve original route data and enhance with booking details
+    navigate("/journeys/checkout", {
+      state: {
+        ...routeData, // Keep all original route data
+        bookingId: bookingId,
+        startLocation: bookingDetails.boardingPoint || routeData.startLocation,
+        endLocation: bookingDetails.dropoffPoint || routeData.endLocation,
+        journeyDate: bookingDetails.journeyDate || routeData.journeyDate,
+        departureTime: departureTime,
+        arrivalTime: arrivalTime,
+        routeId: bookingDetails.routeId || routeData.routeId,
+        fare: farePerSeat,
+        busType: bookingDetails.busType || routeData.busType || "Express Bus",
+      },
+    });
+  };
+
+  // Format date for display
+  const formatDate = (dateString) => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      weekday: "short",
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
 
   const options = clientSecret
     ? {
@@ -316,40 +361,167 @@ const PassengerPayment = () => {
     <div className="min-h-screen bg-slate-900 text-white">
       <PassengerNavbar />
 
-      {isLoading ? (
+      {isLoading && selectedPaymentMethod === "" ? (
         <div className="flex flex-col items-center justify-center h-[70vh]">
           <div className="bg-slate-800 p-10 rounded-xl shadow-lg flex flex-col items-center">
             <Loader2 className="animate-spin text-indigo-500 mb-4" size={50} />
             <h2 className="text-xl font-semibold text-white">
-              Setting up secure payment...
+              Loading booking details...
             </h2>
-            <p className="text-gray-400 mt-2 text-center">
-              Please wait while we connect to our payment provider
-            </p>
           </div>
         </div>
-      ) : clientSecret ? (
-        <Elements stripe={stripePromise} options={options}>
-          <CheckoutForm bookingDetails={bookingDetails} />
-        </Elements>
-      ) : (
-        <div className="flex flex-col items-center justify-center h-[70vh]">
-          <div className="bg-slate-800 p-10 rounded-xl shadow-lg text-center">
-            <h2 className="text-xl font-semibold text-red-400">
-              Unable to initialize payment
+      ) : selectedPaymentMethod === "" ? (
+        // Payment method selection screen
+        <div className="min-h-screen flex flex-col items-center justify-center">
+          <div className="bg-slate-800 p-8 rounded-xl shadow-lg w-[500px] mx-auto mt-40 mb-10">
+            <h2 className="text-2xl font-bold mb-6 text-center text-indigo-400">
+              Choose Payment Method
             </h2>
-            <p className="text-gray-400 mt-2 mb-4">
-              There was a problem connecting to our payment service.
-            </p>
+
+            {/* Payment Summary Section */}
+            <div className="bg-slate-700 p-4 rounded-lg mb-6">
+              <h3 className="text-md font-semibold text-indigo-300 mb-3 border-b border-slate-600 pb-2">
+                Journey Summary
+              </h3>
+
+              <div className="flex items-start mb-3">
+                <MapPin
+                  className="text-gray-400 mr-2 mt-1 flex-shrink-0"
+                  size={18}
+                />
+                <div>
+                  <p className="text-gray-300 text-sm">Route</p>
+                  <p className="font-medium text-white">
+                    {bookingDetails.boardingPoint || "Loading..."} to{" "}
+                    {bookingDetails.dropoffPoint || ""}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start mb-3">
+                <Calendar
+                  className="text-gray-400 mr-2 mt-1 flex-shrink-0"
+                  size={18}
+                />
+                <div>
+                  <p className="text-gray-300 text-sm">Travel Date</p>
+                  <p className="font-medium text-white">
+                    {formatDate(bookingDetails.journeyDate) || "Loading..."}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start mb-3">
+                <Users
+                  className="text-gray-400 mr-2 mt-1 flex-shrink-0"
+                  size={18}
+                />
+                <div>
+                  <p className="text-gray-300 text-sm">Seats</p>
+                  <p className="font-medium text-white">
+                    {bookingDetails.seats
+                      ? bookingDetails.seats.join(", ")
+                      : "Loading..."}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex justify-between items-center pt-3 mt-2 border-t border-slate-600">
+                <span className="text-gray-300">Total Amount:</span>
+                <span className="text-xl font-bold text-indigo-300">
+                  LKR {bookingDetails.totalFare || 0}
+                </span>
+              </div>
+            </div>
+
+            {/* Payment Method Options */}
+            <div className="space-y-4 mb-6">
+              <button
+                onClick={() => setSelectedPaymentMethod("card")}
+                className="w-full p-4 bg-slate-700 hover:bg-slate-600 rounded-lg border-2 border-transparent hover:border-indigo-500 transition-all duration-200 flex items-center  space-x-3 cursor-pointer"
+              >
+                <CreditCard className="text-indigo-400" size={24} />
+                <div className="text-left">
+                  <h3 className="font-semibold text-white">Pay with Card</h3>
+                  <p className="text-gray-400 text-sm">
+                    Secure payment with credit/debit card
+                  </p>
+                </div>
+              </button>
+
+              <button
+                onClick={handleBankTransfer}
+                className="w-full p-4 bg-slate-700 hover:bg-slate-600 rounded-lg border-2 border-transparent hover:border-indigo-500 transition-all duration-200 flex items-center  space-x-3 cursor-pointer"
+              >
+                <Building2 className="text-indigo-400" size={24} />
+                <div className="text-left">
+                  <h3 className="font-semibold text-white">Bank Transfer</h3>
+                  <p className="text-gray-400 text-sm">
+                    Transfer to our bank account and upload receipt
+                  </p>
+                </div>
+              </button>
+            </div>
+
             <button
-              onClick={() => window.location.reload()}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded"
+              type="button"
+              onClick={handleBackToCheckout}
+              className="w-full bg-gray-700 hover:bg-gray-600 text-white py-2 rounded-lg font-semibold mt-2 flex items-center justify-center cursor-pointer"
             >
-              Try Again
+              <ArrowLeft size={18} className="mr-2" />
+              Back to Edit Details
             </button>
           </div>
         </div>
-      )}
+      ) : selectedPaymentMethod === "card" ? (
+        // Card payment screen
+        isLoading ? (
+          <div className="flex flex-col items-center justify-center h-[70vh]">
+            <div className="bg-slate-800 p-10 rounded-xl shadow-lg flex flex-col items-center">
+              <Loader2
+                className="animate-spin text-indigo-500 mb-4"
+                size={50}
+              />
+              <h2 className="text-xl font-semibold text-white">
+                Setting up secure payment...
+              </h2>
+              <p className="text-gray-400 mt-2 text-center">
+                Please wait while we connect to our payment provider
+              </p>
+            </div>
+          </div>
+        ) : clientSecret ? (
+          <Elements stripe={stripePromise} options={options}>
+            <CheckoutForm
+              bookingDetails={bookingDetails}
+              onBack={() => setSelectedPaymentMethod("")}
+            />
+          </Elements>
+        ) : (
+          <div className="flex flex-col items-center justify-center h-[70vh]">
+            <div className="bg-slate-800 p-10 rounded-xl shadow-lg text-center">
+              <h2 className="text-xl font-semibold text-red-400">
+                Unable to initialize payment
+              </h2>
+              <p className="text-gray-400 mt-2 mb-4">
+                There was a problem connecting to our payment service.
+              </p>
+              <button
+                onClick={() => setSelectedPaymentMethod("")}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded mr-2"
+              >
+                Back to Payment Options
+              </button>
+              <button
+                onClick={() => window.location.reload()}
+                className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded"
+              >
+                Try Again
+              </button>
+            </div>
+          </div>
+        )
+      ) : null}
 
       <Footer />
     </div>

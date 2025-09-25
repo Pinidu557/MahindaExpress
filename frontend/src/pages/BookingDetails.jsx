@@ -238,7 +238,7 @@ const BookingDetails = () => {
           ) : booking ? (
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                <div className="bg-slate-700 p-5 rounded-lg">
+                <div className="bg-slate-800 p-5 rounded-lg">
                   <div className="flex items-center gap-3 mb-4 text-indigo-400 border-b border-slate-600 pb-3">
                     <Calendar size={20} />
                     <h2 className="text-lg font-medium">Journey Information</h2>
@@ -246,29 +246,29 @@ const BookingDetails = () => {
 
                   <div className="space-y-3 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-slate-400">Journey Date:</span>
+                      <span className="text-slate-300">Journey Date:</span>
                       <span>{formatDate(booking.journeyDate)}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-400">Boarding Point:</span>
+                      <span className="text-slate-300">Boarding Point:</span>
                       <span>{booking.boardingPoint}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-400">Drop-off Point:</span>
+                      <span className="text-slate-300">Drop-off Point:</span>
                       <span>{booking.dropoffPoint}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-400">Departure Time:</span>
+                      <span className="text-slate-300">Departure Time:</span>
                       <span>{booking.departureTime || "N/A"}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-400">Arrival Time:</span>
+                      <span className="text-slate-300">Arrival Time:</span>
                       <span>{booking.arrivalTime || "N/A"}</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-slate-700 p-5 rounded-lg">
+                <div className="bg-slate-800 p-5 rounded-lg">
                   <div className="flex items-center gap-3 mb-4 text-indigo-400 border-b border-slate-600 pb-3">
                     <Bus size={20} />
                     <h2 className="text-lg font-medium">Booking Information</h2>
@@ -276,35 +276,35 @@ const BookingDetails = () => {
 
                   <div className="space-y-3 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-slate-400">Booking ID:</span>
+                      <span className="text-slate-300">Booking ID:</span>
                       <span>{booking._id}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-400">Booking Date:</span>
+                      <span className="text-slate-300">Booking Date:</span>
                       <span>{formatDate(booking.createdAt)}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-400">Customer Name:</span>
+                      <span className="text-slate-300">Customer Name:</span>
                       <span>{booking.passengerName}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-400">Email:</span>
+                      <span className="text-slate-300">Email:</span>
                       <span>{booking.email}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-400">Phone Number:</span>
+                      <span className="text-slate-300">Phone Number:</span>
                       <span>{booking.mobileNumber}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-400">Bus Type:</span>
+                      <span className="text-slate-300">Bus Type:</span>
                       <span>{booking.busType || "Express Bus"}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-400">Seats:</span>
+                      <span className="text-slate-300">Seats:</span>
                       <span>{booking.seats?.join(", ") || "N/A"}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-400">Status:</span>
+                      <span className="text-slate-300">Status:</span>
                       <span
                         className={`px-2 py-1 rounded-full text-xs ${
                           booking.status === "paid"
@@ -324,7 +324,7 @@ const BookingDetails = () => {
                 </div>
               </div>
 
-              <div className="bg-slate-700 p-5 rounded-lg mb-6">
+              <div className="bg-slate-800 p-5 rounded-lg mb-6">
                 <div className="flex items-center gap-3 mb-4 text-indigo-400 border-b border-slate-600 pb-3">
                   <CreditCard size={20} />
                   <h2 className="text-lg font-medium">Payment Information</h2>
@@ -332,23 +332,23 @@ const BookingDetails = () => {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                   <div>
-                    <span className="text-slate-400 block">Fare:</span>
+                    <span className="text-slate-300 block">Fare:</span>
                     <span className="font-medium">LKR {booking.totalFare}</span>
                   </div>
                   <div>
-                    <span className="text-slate-400 block">
+                    <span className="text-slate-300 block">
                       Payment Method:
                     </span>
                     <span className="font-medium">Credit/Debit Card</span>
                   </div>
                   <div>
-                    <span className="text-slate-400 block">
+                    <span className="text-slate-300 block">
                       Payment Status:
                     </span>
                     <span className="font-medium text-green-400">Paid</span>
                   </div>
                   <div>
-                    <span className="text-slate-400 block">Payment Date:</span>
+                    <span className="text-slate-300 block">Payment Date:</span>
                     <span className="font-medium">
                       {formatDate(booking.updatedAt)}
                     </span>
@@ -360,7 +360,7 @@ const BookingDetails = () => {
                 <button
                   onClick={downloadReceipt}
                   disabled={isGenerating}
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-lg flex items-center gap-2"
+                  className="cursor-pointer bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-lg flex items-center gap-2"
                 >
                   {isGenerating ? (
                     <>

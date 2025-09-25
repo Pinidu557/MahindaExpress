@@ -15,9 +15,11 @@ import PassengerFaqs from "./pages/PassengerFaqs";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import PassengerPayment from "./pages/PassengerPayment";
+import PassengerBankTransfer from "./pages/PassengerBankTransfer";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import PassengerDashboard from "./pages/PassengerDashboard";
 import BookingDetails from "./pages/BookingDetails";
+import UserManagement from "./pages/UserManagement";
 
 export const App = () => {
   return (
@@ -41,11 +43,16 @@ export const App = () => {
           element={<PassengerPayment />}
         />
         <Route
+          path="/journeys/checkout/bank-transfer"
+          element={<PassengerBankTransfer />}
+        />
+        <Route
           path="/journeys/checkout/payment/payment-success"
           element={<PaymentSuccess />}
         />
         <Route path="/passengerDashboard" element={<PassengerDashboard />} />
         <Route path="/booking/:bookingId" element={<BookingDetails />} />
+        <Route path="/user-management" element={<UserManagement />} />
       </Routes>
     </div>
   );

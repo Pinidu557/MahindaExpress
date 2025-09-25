@@ -17,9 +17,10 @@ const PaymentSuccess = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
 
-  // Get booking ID from URL if present
+  // Get booking ID and payment method from URL if present
   const urlParams = new URLSearchParams(window.location.search);
   const bookingId = urlParams.get("booking_id");
+  const paymentMethod = urlParams.get("payment_method");
 
   useEffect(() => {
     const fetchBookingDetails = async () => {
@@ -270,11 +271,14 @@ Please present this ticket when boarding the bus
         <div className="bg-slate-800 p-8 rounded-xl shadow-lg my-10 flex flex-col items-center max-w-3xl mx-auto">
           <CircleCheckBig className="text-green-500 mb-4" size={55} />
           <h1 className="text-3xl font-bold text-white mb-4">
-            Payment Successful!
+            {paymentMethod === "bank_transfer"
+              ? "Payment Receipt Uploaded!"
+              : "Payment Successful!"}
           </h1>
           <p className="text-lg mb-6 text-center">
-            Thank you for your booking. Your payment has been processed
-            successfully.
+            {paymentMethod === "bank_transfer"
+              ? "Thank you for uploading your payment receipt. We will verify your payment within 24 hours and send you a confirmation email."
+              : "Thank you for your booking. Your payment has been processed successfully."}
           </p>
 
           {isLoading ? (
@@ -427,6 +431,14 @@ Please present this ticket when boarding the bus
                     <span className="text-gray-400">Amount:</span> LKR{" "}
                     {bookingData.totalFare}
                   </p>
+                  {paymentMethod === "bank_transfer" && (
+                    <p>
+                      <span className="text-gray-400">Payment Status:</span>{" "}
+                      <span className="text-yellow-400">
+                        Pending Verification
+                      </span>
+                    </p>
+                  )}
                 </div>
               </div>
 

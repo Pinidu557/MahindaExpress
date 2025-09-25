@@ -168,35 +168,41 @@ const getUserBookings = async (req, res) => {
   try {
     // Get the user ID from the authenticated user or from the URL parameter
     const userId = req.userId || req.params.userId;
-    const userEmail = req.user ? req.user.email : null;
 
     console.log("Attempting to fetch bookings for user ID:", userId);
-    console.log("User email from token:", userEmail);
+    console.log("Request user ID from token:", req.userId);
     console.log("Request params:", req.params);
 
-    if (!userId && !userEmail) {
+    if (!userId) {
       return res.status(401).json({
         success: false,
-        message: "Authentication required - no user ID or email available",
+        message: "Authentication required or userId not provided",
       });
     }
 
-    // Find all bookings where either:
-    // 1. The userId matches the logged-in user's ID
-    // 2. The email matches the logged-in user's email
-    let query = {};
-    
-    if (userId && userEmail) {
-      query = { $or: [{ userId }, { email: userEmail }] };
-    } else if (userId) {
-      query = { userId };
-    } else if (userEmail) {
-      query = { email: userEmail };
+    // Find all bookings for this user, sort by newest first
+    const bookings = await Booking.find({ userId }).sort({ createdAt: -1 });
+
+    // If no bookings are found, check if there are any bookings with matching email
+    if (bookings.length === 0 && req.user && req.user.email) {
+      console.log(
+        `No bookings found with userId, checking email: ${req.user.email}`
+      );
+      const emailBookings = await Booking.find({ email: req.user.email }).sort({
+        createdAt: -1,
+      });
+      if (emailBookings.length > 0) {
+        console.log(
+          `Found ${emailBookings.length} bookings with matching email`
+        );
+        return res.status(200).json({
+          success: true,
+          bookings: emailBookings,
+        });
+      }
     }
-    
-    const bookings = await Booking.find(query).sort({ createdAt: -1 });
-    
-    console.log(`Found ${bookings.length} total bookings for user`);
+
+    console.log(`Found ${bookings.length} bookings for user ${userId}`);
 
     return res.status(200).json({
       success: true,

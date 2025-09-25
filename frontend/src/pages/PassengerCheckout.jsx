@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect } from "react";
+import React, { useState, useContext, useEffect, useMemo } from "react";
 import PassengerNavbar from "../components/PassengerNavbar";
 import Footer from "../components/Footer";
 import { AppContent } from "../context/AppContext";
@@ -7,11 +7,139 @@ import { toast } from "react-toastify";
 import { useLocation, useNavigate } from "react-router-dom";
 import { MapPin, Calendar, Clock, Bus, Loader2 } from "lucide-react";
 
+// Route stops data
+const routeStops = {
+  "Colombo-Ampara": [
+    "Ampara",
+    "Uhana",
+    "Mahaoya",
+    "Padiyathalawa",
+    "Beligalla",
+    "Mahiyanganaya",
+    "Hasalaka",
+    "Ududumbara",
+    "Hunnasgiriya",
+    "Rambukwella",
+    "Teldeniya",
+    "Digana",
+    "Kundasale",
+    "Kandy",
+    "Getambe",
+    "Peradeniya",
+    "Pilimathalawa",
+    "Kadugannawa",
+    "Mawanella",
+    "Kegalle",
+    "Galigamuwa",
+    "Ambepussa",
+    "Warakapola",
+    "Pasyala",
+    "Nittambuwa",
+    "Kiribathgoda",
+    "Kadawatha",
+    "Colombo",
+  ],
+  "Ampara-Colombo": [
+    "Colombo",
+    "Kadawatha",
+    "Kiribathgoda",
+    "Nittambuwa",
+    "Pasyala",
+    "Warakapola",
+    "Ambepussa",
+    "Galigamuwa",
+    "Kegalle",
+    "Mawanella",
+    "Kadugannawa",
+    "Pilimathalawa",
+    "Peradeniya",
+    "Getambe",
+    "Kandy",
+    "Kundasale",
+    "Digana",
+    "Teldeniya",
+    "Rambukwella",
+    "Hunnasgiriya",
+    "Ududumbara",
+    "Hasalaka",
+    "Mahiyanganaya",
+    "Beligalla",
+    "Padiyathalawa",
+    "Mahaoya",
+    "Uhana",
+    "Ampara",
+  ],
+  "Colombo-Anuradhapura": [
+    "Anuradhapura",
+    "Kalattewa",
+    "Galkulama",
+    "Thirappane",
+    "Maradankadawala",
+    "Kekirawa",
+    "Dambulla",
+    "Galewela",
+    "Melsiripura",
+    "Ambanpola",
+    "Gokarella",
+    "Kurunegala",
+    "Dambokka Entrance",
+    "Meerigama Entrance",
+    "Pasyala",
+    "Nittambuwa",
+    "Yakkala",
+    "Miriswatta",
+    "Beliummulla",
+    "Mudungoda",
+    "Imbulgoda",
+    "Kirillawala",
+    "Kadawatha",
+    "Mahara",
+    "Kiribathgoda",
+    "Dalugama",
+    "Thorana Junction",
+    "Orugodawatta",
+    "Maligawatta",
+    "Colombo",
+  ],
+  "Anuradhapura-Colombo": [
+    "Colombo",
+    "Maligawatta",
+    "Orugodawatta",
+    "Thorana Junction",
+    "Dalugama",
+    "Kiribathgoda",
+    "Mahara",
+    "Kadawatha",
+    "Kirillawala",
+    "Imbulgoda",
+    "Mudungoda",
+    "Beliummulla",
+    "Miriswatta",
+    "Yakkala",
+    "Nittambuwa",
+    "Pasyala",
+    "Meerigama Entrance",
+    "Dambokka Entrance",
+    "Kurunegala",
+    "Gokarella",
+    "Ambanpola",
+    "Melsiripura",
+    "Galewela",
+    "Dambulla",
+    "Kekirawa",
+    "Maradankadawala",
+    "Thirappane",
+    "Galkulama",
+    "Kalattewa",
+    "Anuradhapura",
+  ],
+};
+
 const SeatBooking = () => {
   const { backendUrl } = useContext(AppContent);
   const location = useLocation();
   const navigate = useNavigate();
-  const routeData = location.state || {};
+  const routeData = useMemo(() => location.state || {}, [location.state]);
 
   // Track bookingId for update
   const [bookingId, setBookingId] = useState(routeData.bookingId || null);
@@ -40,19 +168,54 @@ const SeatBooking = () => {
   const [email, setEmail] = useState("");
   const [boardingPoint, setBoardingPoint] = useState("");
   const [dropoffPoint, setDropoffPoint] = useState("");
-  const [gender, setGender] = useState("Male");
+  const [gender, setGender] = useState("");
   const [journeyDate, setJourneyDate] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [availableStops, setAvailableStops] = useState([]);
+  const [routeKey, setRouteKey] = useState("");
 
   // Set default journey details from route data
   useEffect(() => {
     if (routeData.startLocation && routeData.endLocation) {
-      setBoardingPoint(routeData.startLocation);
-      setDropoffPoint(routeData.endLocation);
+      // Start with empty values so the "Select..." options show by default
+      setBoardingPoint("");
+      setDropoffPoint("");
+
+      // Determine route key based on start and end locations
+      let key = "";
+      if (
+        (routeData.startLocation === "Colombo" &&
+          routeData.endLocation === "Ampara") ||
+        (routeData.startLocation === "Ampara" &&
+          routeData.endLocation === "Colombo")
+      ) {
+        key = `${routeData.startLocation}-${routeData.endLocation}`;
+        setRouteKey(key);
+        setAvailableStops(routeStops[key] || []);
+      } else if (
+        (routeData.startLocation === "Colombo" &&
+          routeData.endLocation === "Anuradhapura") ||
+        (routeData.startLocation === "Anuradhapura" &&
+          routeData.endLocation === "Colombo")
+      ) {
+        key = `${routeData.startLocation}-${routeData.endLocation}`;
+        setRouteKey(key);
+        setAvailableStops(routeStops[key] || []);
+      } else {
+        // For other routes, reset to empty key and stops
+        setRouteKey("");
+        setAvailableStops([]);
+      }
     }
+
     if (routeData.journeyDate) {
+      // Set the journey date and ensure it cannot be changed
       setJourneyDate(routeData.journeyDate);
+    } else {
+      // If no journey date is provided, use the current date
+      setJourneyDate(new Date().toISOString().split("T")[0]);
     }
+
     // If bookingId is passed from navigation, set it
     if (routeData.bookingId) {
       setBookingId(routeData.bookingId);
@@ -222,7 +385,7 @@ const SeatBooking = () => {
             <div className="flex items-center gap-2">
               <MapPin className="text-indigo-400" size={20} />
               <div>
-                <p className="text-gray-400 text-xs">From</p>
+                <p className="text-gray-400 text-xs">From (Route Start)</p>
                 <p className="font-semibold">{routeData.startLocation}</p>
               </div>
             </div>
@@ -230,7 +393,7 @@ const SeatBooking = () => {
             <div className="flex items-center gap-2">
               <MapPin className="text-indigo-400" size={20} />
               <div>
-                <p className="text-gray-400 text-xs">To</p>
+                <p className="text-gray-400 text-xs">To (Route End)</p>
                 <p className="font-semibold">{routeData.endLocation}</p>
               </div>
             </div>
@@ -352,46 +515,127 @@ const SeatBooking = () => {
               onChange={(e) => setMobileNumber(e.target.value)}
               required
             />
+
             <input
               type="email"
-              placeholder="Email (Optional)"
+              placeholder="email address"
               className="px-3 py-2 rounded-lg bg-slate-700 text-white placeholder-gray-400 focus:outline-none"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
-            <input
-              type="text"
-              placeholder="Boarding Point"
-              className="px-3 py-2 rounded-lg bg-slate-700 text-white placeholder-gray-400 focus:outline-none"
-              value={boardingPoint}
-              onChange={(e) => setBoardingPoint(e.target.value)}
-              required
-            />
-            <input
-              type="text"
-              placeholder="Drop off point"
-              className="px-3 py-2 rounded-lg bg-slate-700 text-white placeholder-gray-400 focus:outline-none"
-              value={dropoffPoint}
-              onChange={(e) => setDropoffPoint(e.target.value)}
-              required
-            />
+            <div>
+              {availableStops.length > 0 ? (
+                <>
+                  <select
+                    className="w-full px-3 py-2 rounded-lg bg-slate-700 text-white placeholder-gray-400 focus:outline-none"
+                    value={boardingPoint}
+                    onChange={(e) => {
+                      setBoardingPoint(e.target.value);
+                      // Reset dropoff point when boarding point changes to prevent invalid selections
+                      setDropoffPoint("");
+                    }}
+                    required
+                  >
+                    <option value="" className="text-gray-400">
+                      Select Boarding Point
+                    </option>
+                    {availableStops.map((stop, index) => (
+                      <option key={index} value={stop}>
+                        {stop}
+                      </option>
+                    ))}
+                  </select>
+                </>
+              ) : (
+                <>
+                  <input
+                    type="text"
+                    placeholder="Select Boarding Point"
+                    className="w-full px-3 py-2 rounded-lg bg-slate-700 text-white placeholder-gray-400 focus:outline-none"
+                    value={boardingPoint}
+                    onChange={(e) => setBoardingPoint(e.target.value)}
+                    required
+                  />
+                </>
+              )}
+            </div>
+
+            <div>
+              {availableStops.length > 0 ? (
+                <>
+                  <select
+                    className="w-full px-3 py-2 rounded-lg bg-slate-700 text-white placeholder-gray-400 focus:outline-none"
+                    value={dropoffPoint}
+                    onChange={(e) => setDropoffPoint(e.target.value)}
+                    required
+                    disabled={!boardingPoint}
+                  >
+                    <option value="" className="text-gray-400">
+                      Select Dropoff Point
+                    </option>
+                    {availableStops
+                      .map((stop, index) => {
+                        // Get the indices of the boarding point and current stop
+                        const boardingPointIndex =
+                          availableStops.indexOf(boardingPoint);
+                        const currentStopIndex = index;
+
+                        // For routes starting with Colombo, dropoff must come before boarding point in the list
+                        // For routes starting with Ampara or Anuradhapura, dropoff must come after boarding point in the list
+                        const isValidStop = routeKey.startsWith("Colombo")
+                          ? currentStopIndex < boardingPointIndex // For Colombo to destination routes
+                          : currentStopIndex > boardingPointIndex; // For destination to Colombo routes
+
+                        // Only show stops that make sense based on the boarding point selected
+                        return boardingPoint && isValidStop ? (
+                          <option key={index} value={stop}>
+                            {stop}
+                          </option>
+                        ) : null;
+                      })
+                      .filter(Boolean)}{" "}
+                    {/* Filter out null values */}
+                  </select>
+                </>
+              ) : (
+                <>
+                  <input
+                    type="text"
+                    placeholder="Select Dropoff Point"
+                    className="w-full px-3 py-2 rounded-lg bg-slate-700 text-white placeholder-gray-400 focus:outline-none"
+                    value={dropoffPoint}
+                    onChange={(e) => setDropoffPoint(e.target.value)}
+                    required
+                  />
+                </>
+              )}
+            </div>
             <select
               className="px-3 py-2 rounded-lg bg-slate-700 text-white placeholder-gray-400 focus:outline-none"
               value={gender}
               onChange={(e) => setGender(e.target.value)}
               required
             >
+              <option value="" className="text-gray-400">
+                Select Gender
+              </option>
               <option value="Male">Male</option>
               <option value="Female">Female</option>
             </select>
-            <input
-              type="date"
-              placeholder="Journey Date"
-              className="px-3 py-2 rounded-lg bg-slate-700 text-white placeholder-gray-400 focus:outline-none"
-              value={journeyDate}
-              onChange={(e) => setJourneyDate(e.target.value)}
-              required
-            />
+            <div>
+              <input
+                disabled
+                type="date"
+                placeholder="Journey Date"
+                className="w-full px-3 py-2 rounded-lg bg-slate-700    text-white placeholder-white cursor-not-allowed focus:outline-none"
+                value={journeyDate}
+                onChange={(e) => setJourneyDate(e.target.value)}
+                required
+              />
+              <p className="text-xs text-slate-400 mt-1">
+                Journey date cannot be changed
+              </p>
+            </div>
             <button
               type="submit"
               disabled={isSubmitting || seats.length === 0}

@@ -153,7 +153,7 @@ const PassengerDashboard = () => {
     <div className="min-h-screen bg-slate-900 text-white">
       <PassengerNavbar />
 
-      <div className="container mx-auto px-4 pt-24 pb-12 w-[90%] mt-20 mb-25">
+      <div className="container mx-auto px-4 pt-24 pb-12 w-[92%] mt-15 mb-25">
         <div className="bg-slate-800 rounded-xl shadow-lg overflow-hidden">
           <div className="md:flex">
             {/* Sidebar */}
@@ -349,43 +349,43 @@ const PassengerDashboard = () => {
                           <tr>
                             <th
                               scope="col"
-                              className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider"
+                              className="px-3 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider"
                             >
                               Booking ID
                             </th>
                             <th
                               scope="col"
-                              className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider"
+                              className="px-3 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider"
                             >
                               Route
                             </th>
                             <th
                               scope="col"
-                              className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider"
+                              className="px-3 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider"
                             >
                               Journey Date
                             </th>
                             <th
                               scope="col"
-                              className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider"
+                              className="px-3 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider"
                             >
                               Seats
                             </th>
                             <th
                               scope="col"
-                              className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider"
+                              className="px-3 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider"
                             >
                               Amount
                             </th>
                             <th
                               scope="col"
-                              className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider"
+                              className="px-3 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider"
                             >
                               Status
                             </th>
                             <th
                               scope="col"
-                              className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider"
+                              className="px-3 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider"
                             >
                               Actions
                             </th>
@@ -397,31 +397,35 @@ const PassengerDashboard = () => {
                               key={booking._id}
                               className="hover:bg-slate-750"
                             >
-                              <td className="px-6 py-4 whitespace-nowrap text-sm">
+                              <td className="px-3 py-4 whitespace-nowrap text-sm">
                                 {booking._id.toString
                                   ? booking._id.toString().substring(0, 8)
                                   : booking._id}
                               </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm">
+                              <td className="px-3 py-4 whitespace-nowrap text-sm">
                                 {booking.boardingPoint} to{" "}
                                 {booking.dropoffPoint}
                               </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm">
+                              <td className="px-3 py-4 whitespace-nowrap text-sm">
                                 {formatDate(booking.journeyDate)}
                               </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm">
+                              <td className="px-3 py-4 whitespace-nowrap text-sm">
                                 {booking.seats?.join(", ") || "N/A"}
                               </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm">
+                              <td className="px-3 py-4 whitespace-nowrap text-sm">
                                 LKR {booking.totalFare}
                               </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
+                              <td className="px-3 py-4 whitespace-nowrap">
                                 <span
                                   className={`px-2 py-1 text-xs rounded-full ${
                                     booking.status === "paid"
                                       ? "bg-green-900 text-green-300"
                                       : booking.status === "confirmed"
                                       ? "bg-blue-900 text-blue-300"
+                                      : booking.status === "pending"
+                                      ? "bg-orange-600 text-white"
+                                      : booking.status === "rejected"
+                                      ? "bg-gradient-to-r from-red-600 to-red-700 text-white"
                                       : booking.status === "cancelled"
                                       ? "bg-red-900 text-red-300"
                                       : "bg-yellow-900 text-yellow-300"
@@ -431,12 +435,12 @@ const PassengerDashboard = () => {
                                     booking.status?.slice(1) || "Pending"}
                                 </span>
                               </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm">
+                              <td className="px-3 py-4 whitespace-nowrap text-sm">
                                 <button
                                   onClick={() =>
                                     navigate(`/booking/${booking._id}`)
                                   }
-                                  className="text-indigo-400 hover:text-indigo-300"
+                                  className="text-indigo-400 hover:text-indigo-300 cursor-pointer"
                                 >
                                   View Details
                                 </button>
