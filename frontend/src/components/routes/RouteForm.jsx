@@ -86,19 +86,7 @@ export default function RouteForm({ onSuccess, existingData, onClose }) {
         value={formData.fare}
         onChange={handleChange}
       />
-      {/* Use select for Vehicle Status */}
-      <label className="block">
-        Vehicle Status
-        <select
-          name="vehicalStatus"
-          value={formData.vehicalStatus}
-          onChange={handleChange}
-          className="mt-1 block w-full rounded border p-2"
-        >
-          <option value="Active">Active</option>
-          <option value="Inactive">Inactive</option>
-        </select>
-      </label>
+
       <Button type="submit">
         {existingData ? "Update Route" : "Add Route"}
       </Button>

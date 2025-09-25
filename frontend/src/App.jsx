@@ -1,4 +1,3 @@
-import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
 import RoutesPage from "./pages/RoutesPage";
@@ -15,11 +14,12 @@ import PassengerFaqs from "./pages/PassengerFaqs";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-export const App = () => {
+function App() {
   return (
-    <div>
-      <ToastContainer />
+    <Router>
       <Routes>
+        <Route path="/" element={<Dashboard />} />
+
         <Route path="/" element={<PassengerHome />} />
         <Route path="/login" element={<PassengerLogin />} />
         <Route path="/email-verify" element={<PassengerEmailVerify />} />
@@ -33,8 +33,8 @@ export const App = () => {
         <Route path="/routes" element={<RoutesPage />} />
         <Route path="/vehicles" element={<VehiclesPage />} />
       </Routes>
-    </div>
+    </Router>
   );
-};
+}
 
 export default App;
