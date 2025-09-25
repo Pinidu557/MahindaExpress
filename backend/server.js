@@ -9,6 +9,7 @@ import userRouter from "./routes/userRoutes.js";
 import userDetailsRouter from "./Routes/userDetailsRoutes.js";
 import routeRoutes from "./routes/routeRoutes.js";
 import vehicleRoutes from "./routes/vehicalRoutes.js";
+import cookieParser from "cookie-parser"; // For ES modules
 import contactRouter from "./routes/contactRoutes.js";
 import bookingRouter from "./routes/bookingRoutes.js";
 import router from "./routes/paymentRoutes.js";
@@ -32,8 +33,6 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 //API Endpoints
 app.get("/", (req, res) => res.send("API Worrking ON Fire"));
-app.use("/api/auth", userRouter);
-app.use("/api/user", userDetailsRouter);
 app.use("/api/routes", routeRoutes);
 app.use("/api/vehicles", vehicleRoutes);
 app.use("/api/contacts", contactRouter);

@@ -1,4 +1,5 @@
 /backend/.env
+
 # Dependencies
 node_modules/
 **/node_modules/
@@ -10,3 +11,4 @@ package-lock.json
 # Optional: ignore package.json (not usually recommended)
 # package.json
 # **/package.json
+
