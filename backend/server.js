@@ -13,6 +13,9 @@ import contactRouter from "./routes/contactRoutes.js";
 import bookingRouter from "./routes/bookingRoutes.js";
 import router from "./routes/paymentRoutes.js";
 import adminRouter from "./routes/adminRoutes.js";
+import partRoutes from "./routes/partRoutes.js";
+import maintenanceRoutes from "./routes/maintenanceRoutes.js";
+import fuelRoutes from "./routes/fuelRoutes.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -40,5 +43,8 @@ app.use("/api/contacts", contactRouter);
 app.use("/api/bookings", bookingRouter);
 app.use("/api/payments", router);
 app.use("/api/admin", adminRouter);
+app.use("/api/parts", partRoutes);
+app.use("/api/maintenance", maintenanceRoutes);
+app.use("/api/fuel", fuelRoutes);
 
 app.listen(port, () => console.log(`server started on PORT:${port}`));
