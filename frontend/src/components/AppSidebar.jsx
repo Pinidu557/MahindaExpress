@@ -7,7 +7,7 @@ export default function AppSidebar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
   const navItems = [
-    { path: '/dashboard', label: 'Dashboard', icon: '📊', description: 'Overview & Analytics' },
+    { path: '/dashboardhirun', label: 'Dashboard', icon: '📊', description: 'Overview & Analytics' },
     { path: '/staff/create', label: 'Add Staff', icon: '➕', description: 'Create New Staff' },
     { path: '/staff/list', label: 'Staff List', icon: '📋', description: 'View All Staff' },
     { path: '/staff/profile', label: 'Staff Profile', icon: '👤', description: 'Staff Details' },
@@ -77,6 +77,26 @@ export default function AppSidebar() {
             );
           })}
         </nav>
+
+        {/* Main Dashboard Button */}
+        <div className="mt-8 pt-6 border-t border-slate-700">
+          <Link
+            to="/dashboard"
+            className="flex items-center space-x-4 px-4 py-4 rounded-xl transition-all duration-300 text-slate-300 hover:bg-slate-700 hover:text-white group"
+          >
+            <div className="text-2xl group-hover:scale-110 transition-transform">
+              🏠
+            </div>
+              <div className="flex-1">
+                <div className="font-semibold text-sm">
+                  Main Dashboard
+                </div>
+                <div className="text-xs opacity-75">
+                  Back to Main System
+                </div>
+              </div>
+          </Link>
+        </div>
       </div>
 
       {/* Mobile Sidebar */}
@@ -133,6 +153,27 @@ export default function AppSidebar() {
               );
             })}
           </nav>
+
+          {/* Mobile Main Dashboard Button */}
+          <div className="mt-8 pt-6 border-t border-slate-700">
+            <Link
+              to="/dashboard"
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex items-center space-x-4 px-4 py-4 rounded-xl transition-all duration-300 text-slate-300 hover:bg-slate-700 hover:text-white group"
+            >
+              <div className="text-xl group-hover:scale-110 transition-transform">
+                🏠
+              </div>
+              <div className="flex-1">
+                <div className="font-semibold text-sm">
+                  Main Dashboard
+                </div>
+                <div className="text-xs opacity-75">
+                  Back to Main System
+                </div>
+              </div>
+            </Link>
+          </div>
         </div>
       </div>
     </>

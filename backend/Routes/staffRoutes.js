@@ -17,8 +17,8 @@ const router = express.Router();
 
 // GET routes
 router.get("/", getAllStaff);
-router.get("/:id", getStaffById);
 router.get("/report/all", generateReport);
+router.get("/:id", getStaffById);
 
 // POST routes
 router.post("/", createStaff);

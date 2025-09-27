@@ -7,18 +7,18 @@ import {
   Navigate,
 } from "react-router-dom";
 // Staff Management imports
-import DashboardHirun from "./page/DashboardHirun.jsx";
+import DashboardHirun from "./pages/DashboardHirun.jsx";
 import AppSidebar from "./components/AppSidebar.jsx";
-import Staff from "./page/StaffPage.jsx";
-import CreateStaffPage from "./page/CreateStaffPage.jsx";
-import StaffListPage from "./page/StaffListPage.jsx";
-import StaffProfilePage from "./page/StaffProfilePage.jsx";
-import AssignStaffPage from "./page/AssignStaffPage.jsx";
-import AttendancePage from "./page/AttendancePage.jsx";
-import PayrollPage from "./page/PayrollPage.jsx";
+import Staff from "./pages/StaffPage.jsx";
+import CreateStaffPage from "./pages/CreateStaffPage.jsx";
+import StaffListPage from "./pages/StaffListPage.jsx";
+import StaffProfilePage from "./pages/StaffProfilePage.jsx";
+import AssignStaffPage from "./pages/AssignStaffPage.jsx";
+import AttendancePage from "./pages/AttendancePage.jsx";
+import PayrollPage from "./pages/PayrollPage.jsx";
 // Passenger and Main System imports
 import Dashboard from "./pages/Dashboard";
-import RoutesPage from "./pages/RoutesPage";
+import RoutesPage from "./pages/RoutesPage.jsx";
 import PassengerHome from "./pages/PassengerHome";
 import PassengerLogin from "./pages/PassengerLogin";
 import PassengerEmailVerify from "./pages/PassengerEmailVerify";
@@ -109,16 +109,6 @@ const Layout = ({ children }) => {
             }
           >
             Main Dashboard
-          </NavLink>
-          <NavLink
-            to="/staff"
-            className={({ isActive }) =>
-              `block px-3 py-2 rounded ${
-                isActive ? "bg-blue-800" : "hover:bg-blue-800"
-              }`
-            }
-          >
-            Staff Management
           </NavLink>
         </nav>
       </aside>

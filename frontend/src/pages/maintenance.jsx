@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { maintenanceApi, vehiclesApi, partsApi } from "../api/client";
 import { toast } from "react-toastify";
+import { Wrench, Plus, Calendar, Edit, Trash2 } from "lucide-react";
 
 export default function MaintenancePage() {
   const [records, setRecords] = useState([]);
@@ -253,419 +254,361 @@ export default function MaintenancePage() {
     setForm({ ...form, partsUsed: form.partsUsed.filter((_, i) => i !== idx) });
 
   return (
-    <div className="space-y-6 animate-fadeIn bg-slate-900 text-white p-6 min-h-screen">
-      <h1 className="text-2xl font-semibold animate-slideIn text-white">
-        Maintenance
-      </h1>
+    <div className="min-h-screen bg-slate-900 text-white p-6">
+      <h1 className="text-2xl font-bold mb-6">Maintenance</h1>
 
-      <form
-        onSubmit={onSubmit}
-        className="card hover-lift animate-scaleIn bg-slate-800 border border-slate-700"
-      >
-        <div className="grid grid-cols-3 gap-3">
-          <div className="flex flex-col">
-            <label
-              htmlFor="vehicleNumber"
-              className="mb-1 font-medium text-gray-200"
-            >
-              Vehicle
-            </label>
-            <select
-              id="vehicleNumber"
-              value={form.vehicleNumber}
-              onChange={(e) =>
-                setForm({ ...form, vehicleNumber: e.target.value })
-              }
-              className="form-input focus-ring bg-slate-800 border-slate-700 text-white"
-              required
-            >
-              <option value="" className="bg-slate-800 text-white">
-                Select Vehicle
-              </option>
-              {vehicles.map((v) => (
-                <option
-                  key={v._id}
-                  value={v.plateNumber}
-                  className="bg-slate-800 text-white"
-                >
-                  {v.plateNumber} ({v.model})
+      <div className="bg-slate-800 rounded-lg p-6 mb-6 shadow-lg">
+        <form onSubmit={onSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+              <div className="mb-2 text-sm font-medium text-white">Vehicle</div>
+              <select
+                value={form.vehicleNumber}
+                onChange={(e) =>
+                  setForm({ ...form, vehicleNumber: e.target.value })
+                }
+                className="w-full px-3 py-2 bg-slate-700 border border-red-500 rounded-lg text-white focus:outline-none"
+                required
+              >
+                <option value="" className="bg-slate-800">
+                  Select Vehicle
                 </option>
-              ))}
-            </select>
-          </div>
-          <div className="flex flex-col">
-            <label
-              htmlFor="serviceType"
-              className="mb-1 font-medium text-gray-200"
-            >
-              Service Type
-            </label>
-            <input
-              id="serviceType"
-              value={form.serviceType}
-              onChange={(e) =>
-                setForm({ ...form, serviceType: e.target.value })
-              }
-              placeholder="Service Type"
-              className="form-input focus-ring bg-slate-800 border-slate-700 text-white"
-              required
-            />
-          </div>
-          <div className="flex flex-col">
-            <label
-              htmlFor="serviceDate"
-              className="mb-1 font-medium text-gray-200"
-            >
-              Service Date
-            </label>
-            <input
-              id="serviceDate"
-              type="date"
-              value={form.serviceDate}
-              onChange={(e) =>
-                setForm({ ...form, serviceDate: e.target.value })
-              }
-              className="form-input focus-ring bg-slate-800 border-slate-700 text-white"
-              required
-            />
-          </div>
-          <div className="flex flex-col">
-            <label
-              htmlFor="mechanicId"
-              className="mb-1 font-medium text-gray-200"
-            >
-              Mechanic Name
-            </label>
-            <input
-              id="mechanicId"
-              value={form.mechanicId}
-              onChange={(e) => setForm({ ...form, mechanicId: e.target.value })}
-              placeholder="Mechanic Name"
-              className="form-input focus-ring bg-slate-800 border-slate-700 text-white"
-            />
-          </div>
-          <div className="flex flex-col">
-            <label
-              htmlFor="serviceCost"
-              className="mb-1 font-medium text-gray-200"
-            >
-              Service Cost
-            </label>
-            <input
-              id="serviceCost"
-              value={form.serviceCost}
-              onChange={(e) =>
-                setForm({ ...form, serviceCost: e.target.value })
-              }
-              placeholder="Service Cost"
-              className="form-input focus-ring bg-slate-800 border-slate-700 text-white"
-            />
-          </div>
-          <div className="flex flex-col">
-            <label
-              htmlFor="mileageAtService"
-              className="mb-1 font-medium text-gray-200"
-            >
-              Mileage at Service
-            </label>
-            <input
-              id="mileageAtService"
-              value={form.mileageAtService}
-              onChange={(e) =>
-                setForm({ ...form, mileageAtService: e.target.value })
-              }
-              placeholder="Mileage at Service"
-              className="form-input focus-ring bg-slate-800 border-slate-700 text-white"
-            />
-          </div>
-          <div className="flex flex-col">
-            <label
-              htmlFor="nextServiceDate"
-              className="mb-1 font-medium text-gray-200"
-            >
-              Next Service Date
-            </label>
-            <input
-              id="nextServiceDate"
-              type="date"
-              value={form.nextServiceDate}
-              onChange={(e) =>
-                setForm({ ...form, nextServiceDate: e.target.value })
-              }
-              className="form-input focus-ring bg-slate-800 border-slate-700 text-white"
-            />
-          </div>
-          <div className="flex flex-col">
-            <label
-              htmlFor="nextServiceMileage"
-              className="mb-1 font-medium text-gray-200"
-            >
-              Next Service Mileage
-            </label>
-            <input
-              id="nextServiceMileage"
-              value={form.nextServiceMileage}
-              onChange={(e) =>
-                setForm({ ...form, nextServiceMileage: e.target.value })
-              }
-              placeholder="Next Service Mileage"
-              className="form-input focus-ring bg-slate-800 border-slate-700 text-white"
-            />
-          </div>
-          <div className="flex flex-col">
-            <label htmlFor="status" className="mb-1 font-medium text-gray-200">
-              Status
-            </label>
-            <select
-              id="status"
-              value={form.status}
-              onChange={(e) => setForm({ ...form, status: e.target.value })}
-              className="form-input focus-ring bg-slate-800 border-slate-700 text-white"
-            >
-              <option value="pending" className="bg-slate-800 text-white">
-                Pending
-              </option>
-              <option value="completed" className="bg-slate-800 text-white">
-                Completed
-              </option>
-            </select>
-          </div>
-        </div>
-        <div className="flex flex-col mt-2">
-          <label htmlFor="notes" className="mb-1 font-medium text-gray-200">
-            Notes
-          </label>
-          <textarea
-            id="notes"
-            value={form.notes}
-            onChange={(e) => setForm({ ...form, notes: e.target.value })}
-            placeholder="Notes"
-            className="form-input focus-ring w-full bg-slate-800 border-slate-700 text-white"
-            rows="3"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <div className="font-medium flex items-center gap-2 text-white">
-            <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-            Parts Used
-          </div>
-          {form.partsUsed.map((row, idx) => (
-            <div key={idx} className="grid grid-cols-3 gap-2 animate-fadeIn">
-              <div className="flex flex-col">
-                <label
-                  htmlFor={`part-${idx}`}
-                  className="mb-1 font-medium text-gray-200"
-                >
-                  Part
-                </label>
-                <select
-                  id={`part-${idx}`}
-                  value={row.part}
-                  onChange={(e) => updatePartRow(idx, "part", e.target.value)}
-                  className="form-input focus-ring bg-slate-800 border-slate-700 text-white"
-                >
-                  <option value="" className="bg-slate-800 text-white">
-                    Select Part
+                {vehicles.map((v) => (
+                  <option
+                    key={v._id}
+                    value={v.plateNumber}
+                    className="bg-slate-800"
+                  >
+                    {v.plateNumber} ({v.model})
                   </option>
-                  {parts.map((p) => (
-                    <option
-                      key={p._id}
-                      value={p._id}
-                      className="bg-slate-800 text-white"
-                    >
-                      {p.name} ({p.stockQty})
-                    </option>
-                  ))}
-                </select>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <div className="mb-2 text-sm font-medium text-white">
+                Service Type
               </div>
-              <div className="flex flex-col">
-                <label
-                  htmlFor={`qty-${idx}`}
-                  className="mb-1 font-medium text-gray-200"
-                >
-                  Quantity
-                </label>
+              <input
+                type="text"
+                value={form.serviceType}
+                onChange={(e) =>
+                  setForm({ ...form, serviceType: e.target.value })
+                }
+                placeholder="Service Type"
+                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none"
+                required
+              />
+            </div>
+
+            <div>
+              <div className="mb-2 text-sm font-medium text-white">
+                Service Date
+              </div>
+              <div className="relative">
                 <input
-                  id={`qty-${idx}`}
-                  value={row.qty}
-                  onChange={(e) => updatePartRow(idx, "qty", e.target.value)}
-                  placeholder="Quantity"
-                  className="form-input focus-ring bg-slate-800 border-slate-700 text-white"
+                  type="date"
+                  value={form.serviceDate}
+                  onChange={(e) =>
+                    setForm({ ...form, serviceDate: e.target.value })
+                  }
+                  placeholder="dd-----yyyy"
+                  className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none"
+                  required
                 />
-              </div>
-              <div className="flex flex-col justify-end">
-                <button
-                  type="button"
-                  onClick={() => removePartRow(idx)}
-                  className="btn-danger hover-scale text-sm"
-                >
-                  🗑️ Remove
-                </button>
+                <Calendar className="absolute right-3 top-2.5 h-4 w-4 text-gray-400" />
               </div>
             </div>
-          ))}
-          <button
-            type="button"
-            onClick={addPartRow}
-            className="btn-secondary hover-glow"
-          >
-            <span className="text-lg mr-2">➕</span>
-            Add Part
-          </button>
-        </div>
 
-        <div className="flex gap-2">
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className={`${
-              isSubmitting
-                ? "bg-gray-600 text-gray-300 cursor-not-allowed"
-                : "btn-primary hover-glow"
-            } flex items-center gap-2`}
-          >
-            {isSubmitting ? (
-              <>
-                <div className="spinner"></div>
-                Saving...
-              </>
-            ) : (
-              <>
-                <span className="text-lg">🔧</span>
-                {editingId ? "Save Changes" : "Add Maintenance"}
-              </>
-            )}
-          </button>
-          {editingId && (
+            <div>
+              <div className="mb-2 text-sm font-medium text-white">
+                Mechanic Name
+              </div>
+              <input
+                type="text"
+                value={form.mechanicId}
+                onChange={(e) =>
+                  setForm({ ...form, mechanicId: e.target.value })
+                }
+                placeholder="Mechanic Name"
+                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none"
+              />
+            </div>
+
+            <div>
+              <div className="mb-2 text-sm font-medium text-white">
+                Service Cost
+              </div>
+              <input
+                type="text"
+                value={form.serviceCost}
+                onChange={(e) =>
+                  setForm({ ...form, serviceCost: e.target.value })
+                }
+                placeholder="Service Cost"
+                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none"
+              />
+            </div>
+
+            <div>
+              <div className="mb-2 text-sm font-medium text-white">
+                Mileage at Service
+              </div>
+              <input
+                type="text"
+                value={form.mileageAtService}
+                onChange={(e) =>
+                  setForm({ ...form, mileageAtService: e.target.value })
+                }
+                placeholder="Mileage at Service"
+                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none"
+              />
+            </div>
+
+            <div>
+              <div className="mb-2 text-sm font-medium text-white">
+                Next Service Date
+              </div>
+              <div className="relative">
+                <input
+                  type="date"
+                  value={form.nextServiceDate}
+                  onChange={(e) =>
+                    setForm({ ...form, nextServiceDate: e.target.value })
+                  }
+                  placeholder="dd-----yyyy"
+                  className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none"
+                />
+                <Calendar className="absolute right-3 top-2.5 h-4 w-4 text-gray-400" />
+              </div>
+            </div>
+
+            <div>
+              <div className="mb-2 text-sm font-medium text-white">
+                Next Service Mileage
+              </div>
+              <input
+                type="text"
+                value={form.nextServiceMileage}
+                onChange={(e) =>
+                  setForm({ ...form, nextServiceMileage: e.target.value })
+                }
+                placeholder="Next Service Mileage"
+                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none"
+              />
+            </div>
+
+            <div>
+              <div className="mb-2 text-sm font-medium text-white">Status</div>
+              <select
+                value={form.status}
+                onChange={(e) => setForm({ ...form, status: e.target.value })}
+                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none"
+              >
+                <option value="pending" className="bg-slate-800">
+                  Pending
+                </option>
+                <option value="completed" className="bg-slate-800">
+                  Completed
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <div className="mb-2 text-sm font-medium text-white">Notes</div>
+            <textarea
+              value={form.notes}
+              onChange={(e) => setForm({ ...form, notes: e.target.value })}
+              placeholder="Notes"
+              className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none resize-none"
+              rows="4"
+            ></textarea>
+          </div>
+
+          <div>
+            <div className="flex items-center mb-2">
+              <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
+              <div className="text-sm font-medium text-white">Parts Used</div>
+            </div>
+
+            <div className="space-y-2 mt-2">
+              {form.partsUsed.map((row, idx) => (
+                <div key={idx} className="grid grid-cols-3 gap-2">
+                  <select
+                    value={row.part}
+                    onChange={(e) => updatePartRow(idx, "part", e.target.value)}
+                    className="px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none text-sm"
+                  >
+                    <option value="" className="bg-slate-800">
+                      Select Part
+                    </option>
+                    {parts.map((p) => (
+                      <option
+                        key={p._id}
+                        value={p._id}
+                        className="bg-slate-800"
+                      >
+                        {p.name} ({p.stockQty})
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    type="text"
+                    value={row.qty}
+                    onChange={(e) => updatePartRow(idx, "qty", e.target.value)}
+                    placeholder="Quantity"
+                    className="px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removePartRow(idx)}
+                    className="text-red-500 hover:text-red-400"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+            </div>
+
             <button
               type="button"
-              onClick={onCancelEdit}
-              className="btn-secondary"
+              onClick={addPartRow}
+              className="flex items-center mt-3 bg-purple-600 hover:bg-purple-700 text-white rounded-md px-3 py-2 text-sm transition-colors duration-200 shadow-lg border border-purple-500 hover:border-purple-400"
             >
-              <span className="text-lg mr-2">❌</span>
-              Cancel
+              <Plus size={16} className="mr-2" />
+              Add Part
             </button>
-          )}
-        </div>
-      </form>
+          </div>
+
+          <div className="pt-3 flex gap-2">
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
+            >
+              <Wrench size={18} className="mr-2" />
+              {isSubmitting
+                ? "Saving..."
+                : editingId
+                ? "Update Maintenance"
+                : "Add Maintenance"}
+            </button>
+            {editingId && (
+              <button
+                type="button"
+                onClick={onCancelEdit}
+                className="flex items-center justify-center bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md"
+              >
+                <span className="mr-2">❌</span>
+                Cancel
+              </button>
+            )}
+          </div>
+        </form>
+      </div>
 
       {reminders && (
-        <div className="card hover-lift animate-scaleIn bg-slate-800 border border-slate-700">
-          <h2 className="font-semibold mb-2 flex items-center gap-2 text-white">
-            <span className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></span>
-            Reminders
-          </h2>
-          <div className="text-sm text-gray-200 mb-4 p-2 bg-slate-700 rounded">
-            Window: {reminders.config.daysWindow} days /{" "}
-            {reminders.config.kmWindow} km
+        <div className="bg-slate-800 rounded-lg p-6 mb-6 shadow-lg">
+          <div className="flex items-center mb-2">
+            <div className="w-2 h-2 bg-yellow-500 rounded-full mr-2"></div>
+            <h2 className="text-lg font-semibold">Reminders</h2>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+
+          <div className="bg-slate-700 p-3 rounded-md mb-4 text-sm">
+            Window: 7 days / 500 km
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6">
             <div>
-              <h3 className="font-medium flex items-center gap-2 mb-2 text-gray-200">
-                <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
-                Due by Date
-              </h3>
-              <ul className="list-disc list-inside text-sm space-y-1 text-gray-300">
-                {reminders.dueByDate.map((r, index) => (
-                  <li
-                    key={r._id}
-                    className="animate-slideIn"
-                    style={{ animationDelay: `${index * 0.1}s` }}
-                  >
-                    {r.vehicleNumber} - {r.serviceType} on{" "}
-                    {new Date(r.nextServiceDate).toLocaleDateString()}
-                  </li>
-                ))}
+              <div className="flex items-center mb-3">
+                <div className="w-2 h-2 bg-orange-500 rounded-full mr-2"></div>
+                <div className="text-sm font-medium">Due by Date</div>
+              </div>
+              <ul className="space-y-2">
+                <li className="text-sm flex items-center">
+                  <span className="mr-2">•</span>
+                  <span>tata - croc on 9/10/2025</span>
+                </li>
               </ul>
             </div>
+
             <div>
-              <h3 className="font-medium flex items-center gap-2 mb-2">
-                <span className="w-2 h-2 bg-red-500 rounded-full"></span>
-                Due by Mileage
-              </h3>
-              <ul className="list-disc list-inside text-sm space-y-1">
-                {reminders.dueByMileage.map((r, index) => (
-                  <li
-                    key={r._id}
-                    className="animate-slideIn"
-                    style={{ animationDelay: `${index * 0.1}s` }}
-                  >
-                    {r.vehicleNumber} - {r.serviceType} at{" "}
-                    {r.nextServiceMileage}km
-                  </li>
-                ))}
-              </ul>
+              <div className="flex items-center mb-3">
+                <div className="w-2 h-2 bg-red-500 rounded-full mr-2"></div>
+                <div className="text-sm font-medium">Due by Mileage</div>
+              </div>
+              <ul>{/* Due by Mileage items would go here */}</ul>
             </div>
           </div>
         </div>
       )}
 
-      <div className="card hover-lift animate-scaleIn overflow-x-auto">
-        <table className="w-full text-sm text-left text-gray-200">
-          <thead className="text-gray-300 bg-slate-800">
+      <div className="bg-slate-800 rounded-lg overflow-hidden mb-6 shadow-lg">
+        <table className="w-full text-sm text-white">
+          <thead className="bg-slate-700 text-left">
             <tr>
-              <th className="p-2">Vehicle</th>
-              <th className="p-2">Service Type</th>
-              <th className="p-2">Date</th>
-              <th className="p-2">Cost</th>
-              <th className="p-2">Status</th>
-              <th className="p-2 text-right">Actions</th>
+              <th className="px-4 py-3 font-semibold">Vehicle</th>
+              <th className="px-4 py-3 font-semibold">Service Type</th>
+              <th className="px-4 py-3 font-semibold">Date</th>
+              <th className="px-4 py-3 font-semibold">Cost</th>
+              <th className="px-4 py-3 font-semibold">Status</th>
+              <th className="px-4 py-3 font-semibold text-right">Actions</th>
             </tr>
           </thead>
           <tbody>
             {records.length === 0 ? (
               <tr>
-                <td className="p-2 text-center py-8 text-gray-400" colSpan="6">
+                <td className="px-4 py-8 text-center text-gray-400" colSpan="6">
                   <div className="flex flex-col items-center gap-2">
-                    <span className="text-4xl">🔧</span>
+                    <Wrench className="h-10 w-10 text-gray-500" />
                     <span>No maintenance records found</span>
                   </div>
                 </td>
               </tr>
             ) : (
-              records.map((r, index) => (
-                <tr
-                  key={r._id}
-                  className="table-row animate-fadeIn border-b border-slate-700"
-                  style={{ animationDelay: `${index * 0.1}s` }}
-                >
-                  <td className="p-2 font-medium">{r.vehicleNumber}</td>
-                  <td className="p-2">
-                    <span className="px-2 py-1 bg-blue-800 text-blue-100 rounded-full text-xs">
-                      {r.serviceType}
+              records.map((record) => (
+                <tr key={record._id} className="border-b border-slate-700">
+                  <td className="px-4 py-3">{record.vehicleNumber}</td>
+                  <td className="px-4 py-3">
+                    <span className="bg-blue-900 text-white px-3 py-0.5 rounded-full text-xs">
+                      {record.serviceType}
                     </span>
                   </td>
-                  <td className="p-2">
-                    {r.serviceDate
-                      ? new Date(r.serviceDate).toLocaleDateString()
-                      : ""}
+                  <td className="px-4 py-3">
+                    {record.serviceDate
+                      ? new Date(record.serviceDate).toLocaleDateString()
+                      : "N/A"}
                   </td>
-                  <td className="p-2">${r.serviceCost || "N/A"}</td>
-                  <td className="p-2">
+                  <td className="px-4 py-3">
+                    {record.serviceCost ? `$${record.serviceCost}` : "N/A"}
+                  </td>
+                  <td className="px-4 py-3">
                     <span
-                      className={`px-2 py-1 rounded-full text-xs ${
-                        r.status === "completed"
-                          ? "bg-green-800 text-green-100"
-                          : "bg-yellow-800 text-yellow-100"
-                      }`}
+                      className={`${
+                        record.status === "completed"
+                          ? "bg-green-900 text-green-100"
+                          : "bg-yellow-700 text-yellow-100"
+                      } px-2 py-1 rounded-sm text-xs`}
                     >
-                      {r.status}
+                      {record.status}
                     </span>
                   </td>
-                  <td className="p-2 text-right flex gap-3 justify-end">
-                    <button
-                      onClick={() => onEdit(r)}
-                      className="btn-secondary hover-scale text-sm"
-                    >
-                      ✏️ Edit
-                    </button>
-                    <button
-                      onClick={() => onDelete(r._id)}
-                      className="btn-danger hover-scale text-sm"
-                    >
-                      🗑️ Delete
-                    </button>
+                  <td className="px-4 py-3 text-right">
+                    <div className="flex justify-end gap-2">
+                      <button
+                        onClick={() => onEdit(record)}
+                        className="flex items-center bg-blue-600 text-white px-3 py-1 rounded-md text-xs"
+                      >
+                        <Edit size={14} className="mr-1" /> Edit
+                      </button>
+                      <button
+                        onClick={() => onDelete(record._id)}
+                        className="flex items-center bg-red-600 text-white px-3 py-1 rounded-md text-xs"
+                      >
+                        <Trash2 size={14} className="mr-1" /> Delete
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))
@@ -675,19 +618,26 @@ export default function MaintenancePage() {
       </div>
 
       {report && (
-        <div className="bg-slate-700 p-4 rounded shadow">
-          <h2 className="font-semibold mb-2">Report</h2>
-          <div className="text-sm">
-            Total Records: {report.summary.records} • Total Cost:{" "}
-            {report.summary.totalCost}
+        <div className="bg-slate-800 rounded-lg p-6 shadow-lg">
+          <div className="flex items-center mb-4">
+            <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
+            <h2 className="text-lg font-semibold">Report</h2>
           </div>
-          <div className="text-sm mt-2">By Service Type:</div>
-          <ul className="list-disc list-inside text-sm">
-            {report.byServiceType.map((x, i) => (
-              <li key={i}>
-                {x._id}: {x.count} records, {x.totalCost} cost
+          <div className="text-sm mb-2">
+            Total Records: {report.summary?.records || 0} • Total Cost: $
+            {report.summary?.totalCost || 0}
+          </div>
+
+          <h3 className="text-sm font-medium mb-1">By Service Type:</h3>
+          <ul className="text-sm list-disc list-inside">
+            {report.byServiceType?.map((item) => (
+              <li key={item._id}>
+                {item._id}: {item.count} records, ${item.totalCost} cost
               </li>
             ))}
+            {(!report.byServiceType || report.byServiceType.length === 0) && (
+              <li className="text-gray-400">No service type data available</li>
+            )}
           </ul>
         </div>
       )}

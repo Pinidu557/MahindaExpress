@@ -29,6 +29,14 @@ import fuelRoutes from "./Routes/fuelRoutes.js";
 
 dotenv.config(); // ✅ load .env variables
 
+// Verify environment variables are loaded (without exposing sensitive data)
+console.log("Environment variables loaded:", {
+  NODE_ENV: process.env.NODE_ENV,
+  DB_CONNECTION: process.env.MONGO_URI ? "Set" : "Not Set",
+  JWT_SECRET: process.env.JWT_SECRET ? "Set" : "Not Set",
+  STRIPE_KEY: process.env.STRIPE_SECRET_KEY ? "Set" : "Not Set",
+});
+
 const app = express();
 const port = process.env.PORT || 4000;
 
@@ -36,7 +44,13 @@ const port = process.env.PORT || 4000;
 connectDB();
 
 // ✅ CORS configuration
-const allowedOrigins = ["http://localhost:5173", "http://localhost:5174"];
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:5174",
+  "http://localhost:5175",
+  "http://localhost:5176",
+  "http://localhost:5177",
+];
 
 app.use(express.json());
 app.use(cookieParser());
@@ -59,6 +73,9 @@ app.use(
   })
 );
 
+// ✅ Serve static files from the uploads directory
+app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
+
 // Extra safety: set CORS headers explicitly (dev only)
 app.use((req, res, next) => {
   const origin = req.headers.origin || "*";
@@ -66,7 +83,10 @@ app.use((req, res, next) => {
   res.header("Vary", "Origin");
   res.header("Access-Control-Allow-Credentials", "true");
   res.header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Content-Type, Authorization, X-Requested-With"
+  );
   if (req.method === "OPTIONS") return res.sendStatus(200);
   next();
 });

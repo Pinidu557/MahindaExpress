@@ -37,7 +37,7 @@ const Dashboard = () => {
           </Link>
 
           <Link
-            to=""
+            to="/dashboardhirun"
             className="p-6 bg-orange-500 text-blue rounded-lg shadow hover:bg-orange-600 transition-colors "
           >
             Staff Management

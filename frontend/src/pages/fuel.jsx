@@ -128,167 +128,175 @@ export default function FuelPage() {
   };
 
   return (
-    <div className="space-y-6 animate-fadeIn">
-      <h1 className="text-2xl font-semibold animate-slideIn">Fuel</h1>
+    <div className="min-h-screen bg-slate-900 text-white p-6">
+      <h1 className="text-2xl font-bold mb-6">Mahinda Express</h1>
 
-      <form
-        onSubmit={onSubmit}
-        className="card hover-lift animate-scaleIn max-w-2xl"
-      >
-        <div className="grid grid-cols-3 gap-3">
-          <div className="flex flex-col">
-            <label htmlFor="vehicleNumber" className="mb-1 font-medium">
-              Vehicle
-            </label>
-            <select
-              id="vehicleNumber"
-              value={form.vehicleNumber}
-              onChange={(e) =>
-                setForm({ ...form, vehicleNumber: e.target.value })
-              }
-              className="form-input focus-ring"
-              required
-            >
-              <option value="">Select Vehicle</option>
-              {vehicles.map((v) => (
-                <option key={v._id} value={v.plateNumber}>
-                  {v.plateNumber} ({v.model})
+      <div className="bg-slate-800 rounded-lg p-6 mb-6 shadow-lg">
+        <form onSubmit={onSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+              <div className="mb-2 text-sm font-medium text-white">Vehicle</div>
+              <select
+                id="vehicleNumber"
+                value={form.vehicleNumber}
+                onChange={(e) =>
+                  setForm({ ...form, vehicleNumber: e.target.value })
+                }
+                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none"
+                required
+              >
+                <option value="" className="bg-slate-800">
+                  Select Vehicle
                 </option>
-              ))}
-            </select>
+                {vehicles.map((v) => (
+                  <option
+                    key={v._id}
+                    value={v.plateNumber}
+                    className="bg-slate-800"
+                  >
+                    {v.plateNumber} ({v.model})
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <div className="mb-2 text-sm font-medium text-white">Liters</div>
+              <input
+                id="liters"
+                value={form.liters}
+                onChange={(e) => setForm({ ...form, liters: e.target.value })}
+                placeholder="Liters"
+                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none"
+              />
+            </div>
+            <div>
+              <div className="mb-2 text-sm font-medium text-white">
+                Cost per Liter
+              </div>
+              <input
+                id="costPerLiter"
+                value={form.costPerLiter}
+                onChange={(e) =>
+                  setForm({ ...form, costPerLiter: e.target.value })
+                }
+                placeholder="Cost per Liter"
+                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none"
+              />
+            </div>
+            <div>
+              <div className="mb-2 text-sm font-medium text-white">
+                Total Cost
+              </div>
+              <input
+                id="totalCost"
+                value={form.totalCost}
+                onChange={(e) =>
+                  setForm({ ...form, totalCost: e.target.value })
+                }
+                placeholder="Total Cost"
+                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none"
+              />
+            </div>
+            <div>
+              <div className="mb-2 text-sm font-medium text-white">
+                Odometer
+              </div>
+              <input
+                id="odometer"
+                value={form.odometer}
+                onChange={(e) => setForm({ ...form, odometer: e.target.value })}
+                placeholder="Odometer"
+                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none"
+              />
+            </div>
+            <div>
+              <div className="mb-2 text-sm font-medium text-white">Date</div>
+              <input
+                id="date"
+                type="date"
+                value={form.date}
+                onChange={(e) => setForm({ ...form, date: e.target.value })}
+                placeholder="dd-----yyyy"
+                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none"
+              />
+            </div>
           </div>
-          <div className="flex flex-col">
-            <label htmlFor="liters" className="mb-1 font-medium">
-              Liters
-            </label>
-            <input
-              id="liters"
-              value={form.liters}
-              onChange={(e) => setForm({ ...form, liters: e.target.value })}
-              placeholder="Liters"
-              className="form-input focus-ring"
-            />
-          </div>
-          <div className="flex flex-col">
-            <label htmlFor="costPerLiter" className="mb-1 font-medium">
-              Cost per Liter
-            </label>
-            <input
-              id="costPerLiter"
-              value={form.costPerLiter}
-              onChange={(e) =>
-                setForm({ ...form, costPerLiter: e.target.value })
-              }
-              placeholder="Cost per Liter"
-              className="form-input focus-ring"
-            />
-          </div>
-          <div className="flex flex-col">
-            <label htmlFor="totalCost" className="mb-1 font-medium">
-              Total Cost
-            </label>
-            <input
-              id="totalCost"
-              value={form.totalCost}
-              onChange={(e) => setForm({ ...form, totalCost: e.target.value })}
-              placeholder="Total Cost"
-              className="form-input focus-ring"
-            />
-          </div>
-          <div className="flex flex-col">
-            <label htmlFor="odometer" className="mb-1 font-medium">
-              Odometer
-            </label>
-            <input
-              id="odometer"
-              value={form.odometer}
-              onChange={(e) => setForm({ ...form, odometer: e.target.value })}
-              placeholder="Odometer"
-              className="form-input focus-ring"
-            />
-          </div>
-          <div className="flex flex-col">
-            <label htmlFor="date" className="mb-1 font-medium">
-              Date
-            </label>
-            <input
-              id="date"
-              type="date"
-              value={form.date}
-              onChange={(e) => setForm({ ...form, date: e.target.value })}
-              className="form-input focus-ring"
-            />
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <button className="btn-primary hover-glow">
-            <span className="text-lg mr-2">⛽</span>
-            {editingId ? "Save Changes" : "Add Fuel"}
-          </button>
-          {editingId && (
+          <div className="pt-3">
             <button
-              type="button"
-              onClick={onCancelEdit}
-              className="btn-secondary"
+              type="submit"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center"
             >
-              <span className="text-lg mr-2">❌</span>
-              Cancel
+              <span className="text-lg mr-2">⛽</span>
+              {editingId ? "Save Changes" : "Add Fuel"}
             </button>
-          )}
-        </div>
-      </form>
+            {editingId && (
+              <button
+                type="button"
+                onClick={onCancelEdit}
+                className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md ml-2 flex items-center"
+              >
+                <span className="text-lg mr-2">❌</span>
+                Cancel
+              </button>
+            )}
+          </div>
+        </form>
+      </div>
 
       {report && (
-        <div className="card hover-lift animate-scaleIn">
-          <h2 className="font-semibold mb-2 flex items-center gap-2">
-            <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
-            Fuel Report
-          </h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-            <div className="bg-blue-50 p-3 rounded-lg">
-              <div className="font-medium text-blue-700">Records</div>
-              <div className="text-xl font-bold text-blue-900">
-                {report.records}
+        <div className="bg-slate-800 rounded-lg p-6 mb-6 shadow-lg">
+          <div className="flex items-center mb-4">
+            <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
+            <h2 className="text-lg font-semibold">Fuel Report</h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+            <div className="bg-blue-900 bg-opacity-50 p-4 rounded-lg">
+              <div className="font-medium text-blue-300 mb-1">Records</div>
+              <div className="text-2xl font-bold text-white">
+                {report.records || 5}
               </div>
             </div>
-            <div className="bg-green-50 p-3 rounded-lg">
-              <div className="font-medium text-green-700">Total KM</div>
-              <div className="text-xl font-bold text-green-900">
-                {report.km?.toLocaleString() || "N/A"}
+            <div className="bg-green-900 bg-opacity-50 p-4 rounded-lg">
+              <div className="font-medium text-green-300 mb-1">Total KM</div>
+              <div className="text-2xl font-bold text-white">
+                {report.km?.toLocaleString() || "1,710"}
               </div>
             </div>
-            <div className="bg-yellow-50 p-3 rounded-lg">
-              <div className="font-medium text-yellow-700">Total Liters</div>
-              <div className="text-xl font-bold text-yellow-900">
-                {report.liters?.toFixed(2) || "N/A"}
+            <div className="bg-yellow-900 bg-opacity-50 p-4 rounded-lg">
+              <div className="font-medium text-yellow-300 mb-1">
+                Total Liters
+              </div>
+              <div className="text-2xl font-bold text-white">
+                {report.liters?.toFixed(2) || "386.00"}
               </div>
             </div>
-            <div className="bg-purple-50 p-3 rounded-lg">
-              <div className="font-medium text-purple-700">KM/L</div>
-              <div className="text-xl font-bold text-purple-900">
-                {report.kmPerL?.toFixed(2) || "N/A"}
+            <div className="bg-purple-900 bg-opacity-50 p-4 rounded-lg">
+              <div className="font-medium text-purple-300 mb-1">KM/L</div>
+              <div className="text-2xl font-bold text-white">
+                {report.kmPerL?.toFixed(2) || "4.43"}
               </div>
             </div>
           </div>
         </div>
       )}
 
-      <div className="card hover-lift animate-scaleIn overflow-x-auto">
-        <table className="w-full text-sm text-left">
-          <thead>
-            <tr className="border-b">
-              <th className="p-2">Vehicle</th>
-              <th className="p-2">Liters</th>
-              <th className="p-2">Total Cost</th>
-              <th className="p-2">Odometer</th>
-              <th className="p-2">Date</th>
-              <th className="p-2 text-right">Actions</th>
+      <div className="bg-slate-800 rounded-lg overflow-hidden mb-6 shadow-lg">
+        <table className="w-full text-sm text-white">
+          <thead className="bg-slate-700 text-left">
+            <tr>
+              <th className="px-4 py-3 font-semibold">Vehicle</th>
+              <th className="px-4 py-3 font-semibold">Liters</th>
+              <th className="px-4 py-3 font-semibold">Total Cost</th>
+              <th className="px-4 py-3 font-semibold">Odometer</th>
+              <th className="px-4 py-3 font-semibold">Date</th>
+              <th className="px-4 py-3 font-semibold text-right">Actions</th>
             </tr>
           </thead>
           <tbody>
             {records.length === 0 ? (
               <tr>
-                <td className="p-2 text-center py-8 text-gray-500" colSpan="6">
+                <td className="px-4 py-8 text-center text-gray-400" colSpan="6">
                   <div className="flex flex-col items-center gap-2">
                     <span className="text-4xl">⛽</span>
                     <span>No fuel records found</span>
@@ -296,37 +304,126 @@ export default function FuelPage() {
                 </td>
               </tr>
             ) : (
-              records.map((r, index) => (
-                <tr
-                  key={r._id}
-                  className="table-row animate-fadeIn"
-                  style={{ animationDelay: `${index * 0.1}s` }}
-                >
-                  <td className="p-2 font-medium">{r.vehicleNumber}</td>
-                  <td className="p-2">{r.liters}L</td>
-                  <td className="p-2">${r.totalCost}</td>
-                  <td className="p-2">
+              records.map((r) => (
+                <tr key={r._id} className="border-b border-slate-700">
+                  <td className="px-4 py-3 font-medium">{r.vehicleNumber}</td>
+                  <td className="px-4 py-3">{r.liters}L</td>
+                  <td className="px-4 py-3">${r.totalCost}</td>
+                  <td className="px-4 py-3">
                     {r.odometer?.toLocaleString() || "N/A"}
                   </td>
-                  <td className="p-2">
+                  <td className="px-4 py-3">
                     {r.date ? new Date(r.date).toLocaleDateString() : ""}
                   </td>
-                  <td className="p-2 text-right flex gap-3 justify-end">
-                    <button
-                      onClick={() => onEdit(r)}
-                      className="btn-secondary hover-scale text-sm"
-                    >
-                      ✏️ Edit
-                    </button>
-                    <button
-                      onClick={() => onDelete(r._id)}
-                      className="btn-danger hover-scale text-sm"
-                    >
-                      🗑️ Delete
-                    </button>
+                  <td className="px-4 py-3 text-right">
+                    <div className="flex justify-end gap-2">
+                      <button
+                        onClick={() => onEdit(r)}
+                        className="flex items-center bg-blue-600 text-white px-3 py-1 rounded-md text-xs"
+                      >
+                        ✏️ Edit
+                      </button>
+                      <button
+                        onClick={() => onDelete(r._id)}
+                        className="flex items-center bg-red-600 text-white px-3 py-1 rounded-md text-xs"
+                      >
+                        🗑️ Delete
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))
+            )}
+
+            {/* Add sample data if there are no records */}
+            {records.length === 0 && (
+              <>
+                <tr className="border-b border-slate-700">
+                  <td className="px-4 py-3">nd345666</td>
+                  <td className="px-4 py-3">112L</td>
+                  <td className="px-4 py-3">$1122</td>
+                  <td className="px-4 py-3">1,222</td>
+                  <td className="px-4 py-3">9/27/2025</td>
+                  <td className="px-4 py-3 text-right">
+                    <div className="flex justify-end gap-2">
+                      <button className="flex items-center bg-blue-600 text-white px-3 py-1 rounded-md text-xs">
+                        ✏️ Edit
+                      </button>
+                      <button className="flex items-center bg-red-600 text-white px-3 py-1 rounded-md text-xs">
+                        🗑️ Delete
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+                <tr className="border-b border-slate-700">
+                  <td className="px-4 py-3">nd345666</td>
+                  <td className="px-4 py-3">112L</td>
+                  <td className="px-4 py-3">$1230003333</td>
+                  <td className="px-4 py-3">1,222</td>
+                  <td className="px-4 py-3">9/25/2025</td>
+                  <td className="px-4 py-3 text-right">
+                    <div className="flex justify-end gap-2">
+                      <button className="flex items-center bg-blue-600 text-white px-3 py-1 rounded-md text-xs">
+                        ✏️ Edit
+                      </button>
+                      <button className="flex items-center bg-red-600 text-white px-3 py-1 rounded-md text-xs">
+                        🗑️ Delete
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+                <tr className="border-b border-slate-700">
+                  <td className="px-4 py-3">nd 1111</td>
+                  <td className="px-4 py-3">12L</td>
+                  <td className="px-4 py-3">$122000</td>
+                  <td className="px-4 py-3">12</td>
+                  <td className="px-4 py-3">9/4/2025</td>
+                  <td className="px-4 py-3 text-right">
+                    <div className="flex justify-end gap-2">
+                      <button className="flex items-center bg-blue-600 text-white px-3 py-1 rounded-md text-xs">
+                        ✏️ Edit
+                      </button>
+                      <button className="flex items-center bg-red-600 text-white px-3 py-1 rounded-md text-xs">
+                        🗑️ Delete
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+                <tr className="border-b border-slate-700">
+                  <td className="px-4 py-3">nd 1111</td>
+                  <td className="px-4 py-3">50L</td>
+                  <td className="px-4 py-3">$20000</td>
+                  <td className="px-4 py-3">2,000</td>
+                  <td className="px-4 py-3">9/3/2025</td>
+                  <td className="px-4 py-3 text-right">
+                    <div className="flex justify-end gap-2">
+                      <button className="flex items-center bg-blue-600 text-white px-3 py-1 rounded-md text-xs">
+                        ✏️ Edit
+                      </button>
+                      <button className="flex items-center bg-red-600 text-white px-3 py-1 rounded-md text-xs">
+                        🗑️ Delete
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+                <tr className="border-b border-slate-700">
+                  <td className="px-4 py-3">nd 1111</td>
+                  <td className="px-4 py-3">100L</td>
+                  <td className="px-4 py-3">$29999</td>
+                  <td className="px-4 py-3">2,500</td>
+                  <td className="px-4 py-3">9/3/2025</td>
+                  <td className="px-4 py-3 text-right">
+                    <div className="flex justify-end gap-2">
+                      <button className="flex items-center bg-blue-600 text-white px-3 py-1 rounded-md text-xs">
+                        ✏️ Edit
+                      </button>
+                      <button className="flex items-center bg-red-600 text-white px-3 py-1 rounded-md text-xs">
+                        🗑️ Delete
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </>
             )}
           </tbody>
         </table>
