@@ -44,7 +44,7 @@ const Dashboard = () => {
           </Link>
 
           <Link
-            to=""
+            to="/maintenance"
             className="p-6 bg-yellow-500 text-yellow rounded-lg shadow hover:bg-yellow-600 transition-colors"
           >
             Maintenance

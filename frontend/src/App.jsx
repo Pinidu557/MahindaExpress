@@ -7,7 +7,6 @@ import {
 } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
 import RoutesPage from "./pages/RoutesPage";
-import VehiclesPage from "./pages/VehiclesPage";
 import PassengerHome from "./pages/PassengerHome";
 import PassengerLogin from "./pages/PassengerLogin";
 import PassengerEmailVerify from "./pages/PassengerEmailVerify";
@@ -29,15 +28,17 @@ import PartsPage from "./pages/parts";
 import MaintenancePage from "./pages/maintenance";
 import FuelPage from "./pages/fuel";
 import ReportsPage from "./pages/reports";
+import DashboardPage from "./pages/dashboardkaveesha";
+import VehiclesPage from "./pages/VehiclesPage";
 
 const Layout = ({ children }) => {
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-slate-900">
       <aside className="w-64 bg-blue-900 text-white p-4 space-y-4">
         <div className="text-lg font-bold">Mahinda Express</div>
         <nav className="space-y-1">
           <NavLink
-            to="/"
+            to="/dashboard-admin"
             className={({ isActive }) =>
               `block px-3 py-2 rounded ${
                 isActive ? "bg-blue-800" : "hover:bg-blue-800"
@@ -46,7 +47,7 @@ const Layout = ({ children }) => {
           >
             Dashboard
           </NavLink>
-          <NavLink
+          {/* <NavLink
             to="/vehicles"
             className={({ isActive }) =>
               `block px-3 py-2 rounded ${
@@ -55,7 +56,7 @@ const Layout = ({ children }) => {
             }
           >
             Vehicles
-          </NavLink>
+          </NavLink> */}
           <NavLink
             to="/parts"
             className={({ isActive }) =>
@@ -96,6 +97,16 @@ const Layout = ({ children }) => {
           >
             Reports
           </NavLink>
+          <NavLink
+            to="/Dashboard"
+            className={({ isActive }) =>
+              `block px-3 py-2 rounded ${
+                isActive ? "bg-red-800" : "hover:bg-red-800"
+              }`
+            }
+          >
+            Main Dashboard
+          </NavLink>
         </nav>
       </aside>
       <main className="flex-1 p-6">{children}</main>
@@ -131,6 +142,7 @@ export const App = () => {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/routes" element={<RoutesPage />} />
         <Route path="/vehicles" element={<VehiclesPage />} />
+        {/* <Route path="/vehicles" element={<VehiclesPage />} /> */}
         <Route
           path="/journeys/checkout/payment"
           element={<PassengerPayment />}
@@ -146,6 +158,14 @@ export const App = () => {
         <Route path="/passengerDashboard" element={<PassengerDashboard />} />
         <Route path="/booking/:bookingId" element={<BookingDetails />} />
         <Route path="/user-management" element={<UserManagement />} />
+        <Route
+          path="/dashboard-admin"
+          element={
+            <Layout>
+              <DashboardPage />
+            </Layout>
+          }
+        />
         <Route
           path="/parts"
           element={
