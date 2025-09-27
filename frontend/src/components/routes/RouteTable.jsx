@@ -4,6 +4,10 @@ import Button from "../ui/Button";
 import Modal from "../ui/Modal";
 import RouteForm from "./RouteForm";
 
+//import jsPDF and autoTable
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+
 export default function RouteTable() {
   const [routes, setRoutes] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
@@ -34,18 +38,65 @@ export default function RouteTable() {
     }
   };
 
+  // function to generate PDF
+  const handleGenerateReport = () => {
+    const doc = new jsPDF();
+    doc.setFontSize(18);
+    doc.text("Bus Route Report", 14, 20);
+
+    //prepare table rows
+    const tableColumn = [
+      "Route Number",
+      "Start",
+      "End",
+      "Distance (km)",
+      "Est. Time",
+      "Fare",
+    ];
+    const tableRows = routes.map((r) => [
+      r.routeNumber,
+      r.startLocation,
+      r.endLocation,
+      r.distance,
+      r.estimatedTime,
+      r.fare,
+    ]);
+
+    //Add table
+    autoTable(doc, {
+      head: [tableColumn],
+      body: tableRows,
+      startY: 30,
+      styles: {
+        overflow: "linebreak", // ✅ prevents text cutoff
+        cellWidth: "wrap",
+        fontSize: 10,
+      },
+      columnStyles: {
+        7: { cellWidth: 60 }, // Assigned Route column wider
+      },
+    });
+    doc.save("route_report.pdf");
+  };
+
   return (
     <div className="bg-slate-800 p-6 rounded-lg shadow-lg">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-bold text-white">Routes</h2>
-        <Button
-          onClick={() => {
-            setEditData(null);
-            setModalOpen(true);
-          }}
-        >
-          Add Route
-        </Button>
+        <div className="space-x-2">
+          <Button
+            onClick={() => {
+              setEditData(null);
+              setModalOpen(true);
+            }}
+          >
+            Add Route
+          </Button>
+
+          <Button variant="success" onClick={handleGenerateReport}>
+            Generate Report
+          </Button>
+        </div>
       </div>
 
       <div className="overflow-x-auto">
