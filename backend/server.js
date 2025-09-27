@@ -1,50 +1,48 @@
 import express from "express";
 import cors from "cors";
-import dotenv from "dotenv/config";
+import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
-import path from "path";
-import { fileURLToPath } from "url";
 import connectDB from "./config/mongodb.js";
-import userRouter from "./routes/userRoutes.js";
-import userDetailsRouter from "./Routes/userDetailsRoutes.js";
-import routeRoutes from "./routes/routeRoutes.js";
-import vehicleRoutes from "./routes/vehicalRoutes.js";
-import contactRouter from "./routes/contactRoutes.js";
-import bookingRouter from "./routes/bookingRoutes.js";
-import router from "./routes/paymentRoutes.js";
-import adminRouter from "./routes/adminRoutes.js";
-import partRoutes from "./routes/partRoutes.js";
-import maintenanceRoutes from "./routes/maintenanceRoutes.js";
-import fuelRoutes from "./routes/fuelRoutes.js";
+import staffRoutes from "./Routes/staffRoutes.js";
+import attendanceRoutes from "./Routes/attendanceRoutes.js";
+import leaveRoutes from "./Routes/leaveRoutes.js";
+import payrollRoutes from "./Routes/payrollRoutes.js";
+import reportRoutes from "./Routes/reportRoutes.js";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+dotenv.config(); // ✅ load .env variables
 
 const app = express();
 const port = process.env.PORT || 4000;
+
+// ✅ Connect DB
 connectDB();
 
-const allowedOrigins = ["http://localhost:5173"];
+// ✅ CORS: for development, reflect the requesting origin
 
 app.use(express.json());
 app.use(cookieParser());
-app.use(cors({ origin: allowedOrigins, credentials: true }));
+const corsMiddleware = cors({ origin: true, credentials: true });
+app.use(corsMiddleware);
 
-// Serve static files from uploads directory
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+// Extra safety: set CORS headers explicitly (dev only)
+app.use((req, res, next) => {
+  const origin = req.headers.origin || "*";
+  res.header("Access-Control-Allow-Origin", origin);
+  res.header("Vary", "Origin");
+  res.header("Access-Control-Allow-Credentials", "true");
+  res.header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  if (req.method === "OPTIONS") return res.sendStatus(200);
+  next();
+});
 
-//API Endpoints
-app.get("/", (req, res) => res.send("API Worrking ON Fire"));
-app.use("/api/auth", userRouter);
-app.use("/api/user", userDetailsRouter);
-app.use("/api/routes", routeRoutes);
-app.use("/api/vehicles", vehicleRoutes);
-app.use("/api/contacts", contactRouter);
-app.use("/api/bookings", bookingRouter);
-app.use("/api/payments", router);
-app.use("/api/admin", adminRouter);
-app.use("/api/parts", partRoutes);
-app.use("/api/maintenance", maintenanceRoutes);
-app.use("/api/fuel", fuelRoutes);
+// ✅ API Endpoints
+app.get("/", (req, res) => res.send("API Working ON Fire 🔥"));
+app.use("/staff", staffRoutes); // ✅ mount under /staff
+app.use("/attendance", attendanceRoutes);
+app.use("/leave", leaveRoutes);
+app.use("/payroll", payrollRoutes);
+app.use("/reports", reportRoutes);
 
-app.listen(port, () => console.log(`server started on PORT:${port}`));
+// ✅ Start Server
+app.listen(port, () => console.log(`🚀 Server started on PORT: ${port}`));

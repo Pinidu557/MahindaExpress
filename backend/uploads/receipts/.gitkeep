@@ -1,2 +1,0 @@
-# This file ensures the uploads/receipts directory is tracked by git
-# Receipt files will be stored here but ignored by .gitignore
