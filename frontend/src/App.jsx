@@ -4,7 +4,19 @@ import {
   Routes,
   Route,
   NavLink,
+  Navigate,
 } from "react-router-dom";
+// Staff Management imports
+import DashboardHirun from "./page/DashboardHirun.jsx";
+import AppSidebar from "./components/AppSidebar.jsx";
+import Staff from "./page/StaffPage.jsx";
+import CreateStaffPage from "./page/CreateStaffPage.jsx";
+import StaffListPage from "./page/StaffListPage.jsx";
+import StaffProfilePage from "./page/StaffProfilePage.jsx";
+import AssignStaffPage from "./page/AssignStaffPage.jsx";
+import AttendancePage from "./page/AttendancePage.jsx";
+import PayrollPage from "./page/PayrollPage.jsx";
+// Passenger and Main System imports
 import Dashboard from "./pages/Dashboard";
 import RoutesPage from "./pages/RoutesPage";
 import PassengerHome from "./pages/PassengerHome";
@@ -31,6 +43,7 @@ import ReportsPage from "./pages/reports";
 import DashboardPage from "./pages/dashboardkaveesha";
 import VehiclesPage from "./pages/VehiclesPage";
 
+// Layout component for admin dashboard
 const Layout = ({ children }) => {
   return (
     <div className="flex min-h-screen bg-slate-900">
@@ -47,16 +60,6 @@ const Layout = ({ children }) => {
           >
             Dashboard
           </NavLink>
-          {/* <NavLink
-            to="/vehicles"
-            className={({ isActive }) =>
-              `block px-3 py-2 rounded ${
-                isActive ? "bg-blue-800" : "hover:bg-blue-800"
-              }`
-            }
-          >
-            Vehicles
-          </NavLink> */}
           <NavLink
             to="/parts"
             className={({ isActive }) =>
@@ -107,6 +110,16 @@ const Layout = ({ children }) => {
           >
             Main Dashboard
           </NavLink>
+          <NavLink
+            to="/staff"
+            className={({ isActive }) =>
+              `block px-3 py-2 rounded ${
+                isActive ? "bg-blue-800" : "hover:bg-blue-800"
+              }`
+            }
+          >
+            Staff Management
+          </NavLink>
         </nav>
       </aside>
       <main className="flex-1 p-6">{children}</main>
@@ -114,7 +127,31 @@ const Layout = ({ children }) => {
   );
 };
 
-export const App = () => {
+// Staff Layout component
+const StaffLayout = ({ children }) => {
+  return (
+    <div className="flex min-h-screen bg-slate-900">
+      <AppSidebar />
+      <main className="flex-1 overflow-auto">
+        <div className="p-8">{children}</div>
+      </main>
+    </div>
+  );
+};
+
+// Page Not Found component
+const NotFound = () => (
+  <div className="bg-slate-800 border border-slate-700 rounded-lg p-8 text-center">
+    <div className="w-24 h-24 mx-auto mb-4 bg-slate-700 rounded-full flex items-center justify-center">
+      <span className="text-4xl text-slate-400">🔍</span>
+    </div>
+    <h2 className="text-2xl font-bold text-slate-200 mb-2">Page Not Found</h2>
+    <p className="text-slate-400">The page you're looking for doesn't exist.</p>
+  </div>
+);
+
+// Main App component
+function App() {
   return (
     <div>
       <ToastContainer
@@ -130,6 +167,7 @@ export const App = () => {
         theme="colored"
       />
       <Routes>
+        {/* Passenger Routes */}
         <Route path="/" element={<PassengerHome />} />
         <Route path="/login" element={<PassengerLogin />} />
         <Route path="/email-verify" element={<PassengerEmailVerify />} />
@@ -142,7 +180,6 @@ export const App = () => {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/routes" element={<RoutesPage />} />
         <Route path="/vehicles" element={<VehiclesPage />} />
-        {/* <Route path="/vehicles" element={<VehiclesPage />} /> */}
         <Route
           path="/journeys/checkout/payment"
           element={<PassengerPayment />}
@@ -158,6 +195,8 @@ export const App = () => {
         <Route path="/passengerDashboard" element={<PassengerDashboard />} />
         <Route path="/booking/:bookingId" element={<BookingDetails />} />
         <Route path="/user-management" element={<UserManagement />} />
+
+        {/* Admin Routes */}
         <Route
           path="/dashboard-admin"
           element={
@@ -198,9 +237,86 @@ export const App = () => {
             </Layout>
           }
         />
+
+        {/* Staff Management Routes */}
+        <Route
+          path="/dashboardhirun"
+          element={
+            <StaffLayout>
+              <DashboardHirun />
+            </StaffLayout>
+          }
+        />
+        <Route
+          path="/staff"
+          element={
+            <StaffLayout>
+              <Staff />
+            </StaffLayout>
+          }
+        />
+        <Route
+          path="/staff/create"
+          element={
+            <StaffLayout>
+              <CreateStaffPage />
+            </StaffLayout>
+          }
+        />
+        <Route
+          path="/staff/edit/:staffId"
+          element={
+            <StaffLayout>
+              <CreateStaffPage />
+            </StaffLayout>
+          }
+        />
+        <Route
+          path="/staff/list"
+          element={
+            <StaffLayout>
+              <StaffListPage />
+            </StaffLayout>
+          }
+        />
+        <Route
+          path="/staff/profile"
+          element={
+            <StaffLayout>
+              <StaffProfilePage />
+            </StaffLayout>
+          }
+        />
+        <Route
+          path="/staff/assign"
+          element={
+            <StaffLayout>
+              <AssignStaffPage />
+            </StaffLayout>
+          }
+        />
+        <Route
+          path="/attendance"
+          element={
+            <StaffLayout>
+              <AttendancePage />
+            </StaffLayout>
+          }
+        />
+        <Route
+          path="/payroll"
+          element={
+            <StaffLayout>
+              <PayrollPage />
+            </StaffLayout>
+          }
+        />
+
+        {/* 404 Route */}
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </div>
   );
-};
+}
 
 export default App;

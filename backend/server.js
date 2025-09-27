@@ -1,30 +1,41 @@
 import express from "express";
 import cors from "cors";
-import dotenv from "dotenv/config";
+import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 import path from "path";
 import mongoose from "mongoose";
 import { fileURLToPath } from "url";
 import connectDB from "./config/mongodb.js";
-import userRouter from "./routes/userRoutes.js";
-import userDetailsRouter from "./Routes/userDetailsRoutes.js";
-import routeRoutes from "./routes/routeRoutes.js";
-import vehicleRoutes from "./routes/vehicalRoutes.js";
-import contactRouter from "./routes/contactRoutes.js";
-import bookingRouter from "./routes/bookingRoutes.js";
-import router from "./routes/paymentRoutes.js";
-import adminRouter from "./routes/adminRoutes.js";
-import partRoutes from "./routes/partRoutes.js";
-import maintenanceRoutes from "./routes/maintenanceRoutes.js";
-import fuelRoutes from "./routes/fuelRoutes.js";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// Staff Management Routes
+import staffRoutes from "./Routes/staffRoutes.js";
+import attendanceRoutes from "./Routes/attendanceRoutes.js";
+import leaveRoutes from "./Routes/leaveRoutes.js";
+import payrollRoutes from "./Routes/payrollRoutes.js";
+import reportRoutes from "./Routes/reportRoutes.js";
+
+// Main System Routes
+import userRouter from "./Routes/userRoutes.js";
+import userDetailsRouter from "./Routes/userDetailsRoutes.js";
+import routeRoutes from "./Routes/routeRoutes.js";
+import vehicleRoutes from "./Routes/vehicalRoutes.js";
+import contactRouter from "./Routes/contactRoutes.js";
+import bookingRouter from "./Routes/bookingRoutes.js";
+import router from "./Routes/paymentRoutes.js";
+import adminRouter from "./Routes/adminRoutes.js";
+import partRoutes from "./Routes/partRoutes.js";
+import maintenanceRoutes from "./Routes/maintenanceRoutes.js";
+import fuelRoutes from "./Routes/fuelRoutes.js";
+
+dotenv.config(); // ✅ load .env variables
 
 const app = express();
 const port = process.env.PORT || 4000;
+
+// ✅ Connect DB
 connectDB();
 
+// ✅ CORS configuration
 const allowedOrigins = ["http://localhost:5173", "http://localhost:5174"];
 
 app.use(express.json());
@@ -35,7 +46,7 @@ app.use(
       // Allow requests with no origin (like mobile apps or curl requests)
       if (!origin) return callback(null, true);
 
-      if (allowedOrigins.indexOf(origin) !== -1) {
+      if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
         return callback(null, true);
       } else {
         console.log(`Blocked by CORS: ${origin}`);
@@ -48,15 +59,33 @@ app.use(
   })
 );
 
-// Serve static files from uploads directory
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+// Extra safety: set CORS headers explicitly (dev only)
+app.use((req, res, next) => {
+  const origin = req.headers.origin || "*";
+  res.header("Access-Control-Allow-Origin", origin);
+  res.header("Vary", "Origin");
+  res.header("Access-Control-Allow-Credentials", "true");
+  res.header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  if (req.method === "OPTIONS") return res.sendStatus(200);
+  next();
+});
 
-//API Endpoints
-app.get("/", (req, res) => res.send("API Worrking ON Fire"));
+// ✅ API Endpoints
+app.get("/", (req, res) => res.send("API Working ON Fire 🔥"));
+
+// Staff Management API Routes
+app.use("/staff", staffRoutes);
+app.use("/attendance", attendanceRoutes);
+app.use("/leave", leaveRoutes);
+app.use("/payroll", payrollRoutes);
+app.use("/reports", reportRoutes);
+
+// Main System API Routes
 app.use("/api/auth", userRouter);
 app.use("/api/user", userDetailsRouter);
 app.use("/api/routes", routeRoutes);
-app.use("/api/vehicles", vehicleRoutes); // Note: Using vehicleRoutes from vehicalRoutes.js
+app.use("/api/vehicles", vehicleRoutes); // Using vehicleRoutes from vehicalRoutes.js
 app.use("/api/contacts", contactRouter);
 app.use("/api/bookings", bookingRouter);
 app.use("/api/payments", router);
@@ -101,4 +130,5 @@ app.get("/api/add-test-vehicle", async (req, res) => {
   }
 });
 
-app.listen(port, () => console.log(`server started on PORT:${port}`));
+// ✅ Start Server
+app.listen(port, () => console.log(`🚀 Server started on PORT: ${port}`));
