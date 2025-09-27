@@ -2,12 +2,30 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
+import path from "path";
+import mongoose from "mongoose";
+import { fileURLToPath } from "url";
 import connectDB from "./config/mongodb.js";
+
+// Staff Management Routes
 import staffRoutes from "./Routes/staffRoutes.js";
 import attendanceRoutes from "./Routes/attendanceRoutes.js";
 import leaveRoutes from "./Routes/leaveRoutes.js";
 import payrollRoutes from "./Routes/payrollRoutes.js";
 import reportRoutes from "./Routes/reportRoutes.js";
+
+// Main System Routes
+import userRouter from "./Routes/userRoutes.js";
+import userDetailsRouter from "./Routes/userDetailsRoutes.js";
+import routeRoutes from "./Routes/routeRoutes.js";
+import vehicleRoutes from "./Routes/vehicalRoutes.js";
+import contactRouter from "./Routes/contactRoutes.js";
+import bookingRouter from "./Routes/bookingRoutes.js";
+import router from "./Routes/paymentRoutes.js";
+import adminRouter from "./Routes/adminRoutes.js";
+import partRoutes from "./Routes/partRoutes.js";
+import maintenanceRoutes from "./Routes/maintenanceRoutes.js";
+import fuelRoutes from "./Routes/fuelRoutes.js";
 
 dotenv.config(); // ✅ load .env variables
 
@@ -17,12 +35,29 @@ const port = process.env.PORT || 4000;
 // ✅ Connect DB
 connectDB();
 
-// ✅ CORS: for development, reflect the requesting origin
+// ✅ CORS configuration
+const allowedOrigins = ["http://localhost:5173", "http://localhost:5174"];
 
 app.use(express.json());
 app.use(cookieParser());
-const corsMiddleware = cors({ origin: true, credentials: true });
-app.use(corsMiddleware);
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
+        return callback(null, true);
+      } else {
+        console.log(`Blocked by CORS: ${origin}`);
+        return callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+  })
+);
 
 // Extra safety: set CORS headers explicitly (dev only)
 app.use((req, res, next) => {
@@ -38,11 +73,62 @@ app.use((req, res, next) => {
 
 // ✅ API Endpoints
 app.get("/", (req, res) => res.send("API Working ON Fire 🔥"));
-app.use("/staff", staffRoutes); // ✅ mount under /staff
+
+// Staff Management API Routes
+app.use("/staff", staffRoutes);
 app.use("/attendance", attendanceRoutes);
 app.use("/leave", leaveRoutes);
 app.use("/payroll", payrollRoutes);
 app.use("/reports", reportRoutes);
+
+// Main System API Routes
+app.use("/api/auth", userRouter);
+app.use("/api/user", userDetailsRouter);
+app.use("/api/routes", routeRoutes);
+app.use("/api/vehicles", vehicleRoutes); // Using vehicleRoutes from vehicalRoutes.js
+app.use("/api/contacts", contactRouter);
+app.use("/api/bookings", bookingRouter);
+app.use("/api/payments", router);
+app.use("/api/admin", adminRouter);
+app.use("/api/parts", partRoutes);
+app.use("/api/maintenance", maintenanceRoutes);
+app.use("/api/fuel", fuelRoutes);
+
+// Add a test vehicle endpoint
+app.get("/api/add-test-vehicle", async (req, res) => {
+  try {
+    const Vehicle = mongoose.model("Vehical");
+
+    // Check if test vehicle already exists
+    const existingVehicle = await Vehicle.findOne({ plateNumber: "tata" });
+    if (existingVehicle) {
+      return res.json({
+        message: "Test vehicle 'tata' already exists",
+        vehicle: existingVehicle,
+      });
+    }
+
+    // Create test vehicle
+    const vehicle = await Vehicle.create({
+      plateNumber: "tata",
+      vehicleType: "Bus",
+      model: "Tata Marcopolo",
+      capacity: 45,
+      routeStatus: "Available",
+    });
+
+    res.json({
+      message: "Test vehicle created successfully",
+      vehicle,
+    });
+  } catch (error) {
+    console.error("Error creating test vehicle:", error);
+    res.status(500).json({
+      message: "Error creating test vehicle",
+      error: error.message,
+    });
+  }
+});
 
 // ✅ Start Server
 app.listen(port, () => console.log(`🚀 Server started on PORT: ${port}`));
