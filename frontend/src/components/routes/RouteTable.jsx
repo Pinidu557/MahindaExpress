@@ -109,7 +109,7 @@ export default function RouteTable() {
               <th className="py-2 px-4 text-left">Distance (km)</th>
               <th className="py-2 px-4 text-left">Est. Time</th>
               <th className="py-2 px-4 text-left">Fare</th>
-
+              <th className="py-2 px-4 text-left">Status</th>
               <th className="py-2 px-4 text-left">Actions</th>
             </tr>
           </thead>
@@ -125,7 +125,7 @@ export default function RouteTable() {
                 <td className="py-2 px-4">{route.distance}</td>
                 <td className="py-2 px-4">{route.estimatedTime}</td>
                 <td className="py-2 px-4">{route.fare}</td>
-
+                <td className="py-2 px-4">{route.vehicalStatus}</td>
                 <td className="py-2 px-4 space-x-2">
                   <Button
                     onClick={() => {

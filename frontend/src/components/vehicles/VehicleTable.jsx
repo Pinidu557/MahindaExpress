@@ -115,8 +115,6 @@ export default function VehicleTable() {
               <th className="py-2 px-4 text-left">Type</th>
               <th className="py-2 px-4 text-left">Model</th>
               <th className="py-2 px-4 text-left">Capacity</th>
-              <th className="py-2 px-4 text-left">Mileage (km)</th>
-              <th className="py-2 px-4 text-left">Year</th>
               <th className="py-2 px-4 text-left">Vehicle Status</th>
               <th className="py-2 px-4 text-left">Assigned Route</th>
               <th className="py-2 px-4 text-left">Actions</th>
@@ -132,9 +130,7 @@ export default function VehicleTable() {
                 <td className="py-2 px-4">{vehicle.vehicleType}</td>
                 <td className="py-2 px-4">{vehicle.model}</td>
                 <td className="py-2 px-4">{vehicle.capacity}</td>
-                <td className="py-2 px-4">{vehicle.mileage}</td>
-                <td className="py-2 px-4">{vehicle.year}</td>
-                <td className="py-2 px-4">{vehicle.vehicleStatus}</td>
+                <td className="py-2 px-4">{vehicle.routeStatus}</td>
                 <td className="py-2 px-4">
                   {vehicle.assignedRouteId
                     ? `${vehicle.assignedRouteId.routeNumber} - ${vehicle.assignedRouteId.startLocation} → ${vehicle.assignedRouteId.endLocation}`

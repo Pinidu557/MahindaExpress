@@ -1,4 +1,4 @@
-import { assets } from "../assets/assets";
+import { assets } from "../assets/assets.js";
 import { useNavigate } from "react-router-dom";
 import { AppContent } from "../context/AppContext.jsx";
 import { useContext, useState } from "react";

@@ -32,9 +32,6 @@ export const JourneySection = () => {
                   and cultural discovery.
                 </p>
               </div>
-              <button className="px-5 py-2 rounded-full text-sm font-medium bg-indigo-500 hover:bg-indigo-600 text-white cursor-pointer">
-                Book Now
-              </button>
             </div>
             <img
               src={assets.topjimg1}
@@ -60,11 +57,8 @@ export const JourneySection = () => {
             <img
               src={assets.badulla_journey}
               alt="Moratuwa → Jaffna"
-              className="object-cover w-full h-40 rounded-2xl mb-2"
+              className="object-cover w-full h-50 rounded-2xl mt-2"
             />
-            <button className="px-5 py-2 rounded-full text-sm font-medium border border-white text-white hover:bg-gray-300 hover:text-indigo-600 cursor-pointer">
-              Book Now →
-            </button>
           </div>
         </div>
 
@@ -83,11 +77,8 @@ export const JourneySection = () => {
             <img
               src={assets.ampara_journey}
               alt="Moratuwa → Jaffna"
-              className="object-cover w-full h-40 rounded-2xl mb-2"
+              className="object-cover w-full h-50 rounded-2xl mt-2"
             />
-            <button className="px-5 py-2 rounded-full text-sm font-medium border border-white text-white hover:bg-gray-300 hover:text-purple-600 cursor-pointer">
-              Book Now →
-            </button>
           </div>
         </div>
       </div>

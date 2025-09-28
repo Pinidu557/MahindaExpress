@@ -1,17 +1,56 @@
-import api from "./api";
+import { api } from "../api/client.js";
 
-// get all routes
-export const getAllRoutes = () => api.get("/routes");
+// Get all routes
+export const getAllRoutes = async () => {
+  try {
+    const response = await api.get("/routes");
+    return { success: true, data: response.data };
+  } catch (error) {
+    console.error("Error fetching routes:", error);
+    throw error;
+  }
+};
 
-// get a specific route by id
-export const getRouteById = (id) => api.get(`/routes/${id}`);
+// Get a single route by ID
+export const getRouteById = async (id) => {
+  try {
+    const response = await api.get(`/routes/${id}`);
+    return { success: true, data: response.data };
+  } catch (error) {
+    console.error(`Error fetching route with ID ${id}:`, error);
+    throw error;
+  }
+};
 
-// create a new route
-export const createRoute = (routeData) => api.post("/routes", routeData);
+// Create a new route
+export const createRoute = async (routeData) => {
+  try {
+    const response = await api.post("/routes", routeData);
+    return { success: true, data: response.data };
+  } catch (error) {
+    console.error("Error creating route:", error);
+    throw error;
+  }
+};
 
-// update an existing route by id
-export const updateRoute = (id, routeData) =>
-  api.put(`/routes/${id}`, routeData);
+// Update an existing route
+export const updateRoute = async (id, routeData) => {
+  try {
+    const response = await api.put(`/routes/${id}`, routeData);
+    return { success: true, data: response.data };
+  } catch (error) {
+    console.error(`Error updating route with ID ${id}:`, error);
+    throw error;
+  }
+};
 
-// delete a route by id
-export const deleteRoute = (id) => api.delete(`/routes/${id}`);
+// Delete a route
+export const deleteRoute = async (id) => {
+  try {
+    const response = await api.delete(`/routes/${id}`);
+    return { success: true, data: response.data };
+  } catch (error) {
+    console.error(`Error deleting route with ID ${id}:`, error);
+    throw error;
+  }
+};

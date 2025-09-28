@@ -11,9 +11,7 @@ export default function VehicleForm({ onSuccess, existingData, onClose }) {
       vehicleType: "",
       model: "",
       capacity: "",
-      mileage: "",
-      year: "",
-      vehicleStatus: "Available",
+      routeStatus: "Available",
       assignedRouteId: "",
     }
   );
@@ -87,34 +85,17 @@ export default function VehicleForm({ onSuccess, existingData, onClose }) {
         value={formData.capacity}
         onChange={handleChange}
       />
-
-      {/* ✅ New Mileage Field */}
-      <InputField
-        label="Mileage (km)"
-        name="mileage"
-        type="number"
-        value={formData.mileage}
-        onChange={handleChange}
-      />
-      {/* ✅ New Year Field */}
-      <InputField
-        label="Year"
-        name="year"
-        type="number"
-        value={formData.year}
-        onChange={handleChange}
-      />
       <label className="block text-sm font-medium text-gray-200">
-        Vehicle Status
+        Route Status
       </label>
       <select
-        name="vehicleStatus"
-        value={formData.vehicleStatus}
+        name="routeStatus"
+        value={formData.routeStatus}
         onChange={handleChange}
         className="w-full p-2 rounded-md bg-slate-800 border border-slate-600 text-white focus:ring-2 focus:ring-blue-500"
       >
         <option value="Available">Available</option>
-        <option value="On Route">Unavailable</option>
+        <option value="On Route">On Route</option>
         <option value="Under Maintenance">Under Maintenance</option>
       </select>
 

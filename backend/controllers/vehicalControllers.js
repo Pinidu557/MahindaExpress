@@ -1,9 +1,9 @@
-import Vehicle from "../models/vehicals.js";
+import Vehical from "../models/vehicals.js";
 
 // Create a new vehicle
 export const createVehicle = async (req, res) => {
   try {
-    const vehicle = await Vehicle.create(req.body);
+    const vehicle = await Vehical.create(req.body);
     res.status(201).json(vehicle);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -13,7 +13,7 @@ export const createVehicle = async (req, res) => {
 // Get all vehicles
 export const getAllVehicles = async (req, res) => {
   try {
-    const vehicles = await Vehicle.find().populate("assignedRouteId");
+    const vehicles = await Vehical.find().populate("assignedRouteId");
     res.json(vehicles);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -23,7 +23,7 @@ export const getAllVehicles = async (req, res) => {
 // Get a single vehicle by ID
 export const getVehicleById = async (req, res) => {
   try {
-    const vehicle = await Vehicle.findById(req.params.id);
+    const vehicle = await Vehical.findById(req.params.id);
     if (!vehicle) return res.status(404).json({ message: "Vehicle not found" });
     res.json(vehicle);
   } catch (error) {
@@ -34,7 +34,7 @@ export const getVehicleById = async (req, res) => {
 // Update a vehicle
 export const updateVehicle = async (req, res) => {
   try {
-    const vehicle = await Vehicle.findByIdAndUpdate(req.params.id, req.body, {
+    const vehicle = await Vehical.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
     });
     if (!vehicle) return res.status(404).json({ message: "Vehicle not found" });
@@ -47,7 +47,7 @@ export const updateVehicle = async (req, res) => {
 // Delete a vehicle
 export const deleteVehicle = async (req, res) => {
   try {
-    const vehicle = await Vehicle.findByIdAndDelete(req.params.id);
+    const vehicle = await Vehical.findByIdAndDelete(req.params.id);
     if (!vehicle) return res.status(404).json({ message: "Vehicle not found" });
     res.json({ message: "Vehicle deleted successfully" });
   } catch (error) {
@@ -61,7 +61,7 @@ export const updateVehicleStatus = async (req, res) => {
     const { id } = req.params;
     const { vehicalStatus } = req.body;
 
-    const vehicle = await Vehicle.findByIdAndUpdate(
+    const vehicle = await Vehical.findByIdAndUpdate(
       id,
       { vehicalStatus },
       { new: true } // return the updated document

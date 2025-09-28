@@ -8,6 +8,8 @@ import {
   sendResetOtp,
   sendVerifyOtp,
   verifyEmail,
+  getAllUsers,
+  deleteUser,
 } from "../controllers/userController.js";
 import userAuth from "../middleware/userAuth.js";
 
@@ -21,5 +23,7 @@ userRouter.post("/verify-account", userAuth, verifyEmail);
 userRouter.get("/is-auth", userAuth, isAuthenticated);
 userRouter.post("/send-reset-otp", sendResetOtp);
 userRouter.post("/reset-password", resetPassword);
+userRouter.get("/all-users", userAuth, getAllUsers); // Add this new route to get all users
+userRouter.delete("/:id", userAuth, deleteUser); // Add delete user route
 
 export default userRouter;
