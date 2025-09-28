@@ -6,6 +6,7 @@ import {
   NavLink,
   Navigate,
 } from "react-router-dom";
+import ScrollToTop from "./components/ScrollToTop";
 // Staff Management imports
 import DashboardHirun from "./pages/DashboardHirun.jsx";
 import AppSidebar from "./components/AppSidebar.jsx";
@@ -156,6 +157,7 @@ function App() {
         pauseOnHover
         theme="colored"
       />
+      <ScrollToTop />
       <Routes>
         {/* Passenger Routes */}
         <Route path="/" element={<PassengerHome />} />

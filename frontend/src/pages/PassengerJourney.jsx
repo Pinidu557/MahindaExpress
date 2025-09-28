@@ -518,7 +518,7 @@ const PassengerJourney = () => {
                             )
                           }
                           className={`flex items-center justify-center gap-1 px-8 py-3 rounded-lg whitespace-nowrap text-md
-                            bg-indigo-600 cursor-pointer font-semibold`}
+                            bg-indigo-600 cursor-pointer font-semibold hover:bg-indigo-700`}
                         >
                           {isTimePassed ? (
                             <>

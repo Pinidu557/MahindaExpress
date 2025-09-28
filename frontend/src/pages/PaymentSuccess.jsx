@@ -2,7 +2,14 @@ import React, { useEffect, useState, useContext } from "react";
 import PassengerNavbar from "../components/PassengerNavbar";
 import Footer from "../components/Footer";
 import { Link, useNavigate } from "react-router-dom";
-import { CircleCheckBig, Download, FileText, X, Clock, AlertCircle } from "lucide-react";
+import {
+  CircleCheckBig,
+  Download,
+  FileText,
+  X,
+  Clock,
+  AlertCircle,
+} from "lucide-react";
 import Button from "../components/ui/Button";
 import { AppContent } from "../context/AppContext";
 import axios from "axios";
@@ -19,18 +26,22 @@ const PaymentSuccess = () => {
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [showRefundForm, setShowRefundForm] = useState(false);
   const [refundDetails, setRefundDetails] = useState({
-    bankName: '',
-    accountNumber: '',
-    accountHolderName: '',
-    reason: ''
+    bankName: "",
+    accountNumber: "",
+    accountHolderName: "",
+    reason: "",
   });
   const [isCancelling, setIsCancelling] = useState(false);
-  const [justCancelled, setJustCancelled] = useState(false);
 
   // Get booking ID and payment method from URL if present
   const urlParams = new URLSearchParams(window.location.search);
   const bookingId = urlParams.get("booking_id");
   const paymentMethod = urlParams.get("payment_method");
+
+  // Scroll to top when component mounts
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   useEffect(() => {
     const fetchBookingDetails = async () => {
@@ -95,24 +106,32 @@ const PaymentSuccess = () => {
     try {
       console.log("Cancelling booking:", bookingId);
       console.log("Refund details:", refundDetails);
-      
-      const response = await axios.post(`${backendUrl}/api/bookings/${bookingId}/cancel`, {
-        refundDetails,
-        reason: refundDetails.reason
-      }, {
-        withCredentials: true,
-        headers: {
-          'Content-Type': 'application/json'
+
+      const response = await axios.post(
+        `${backendUrl}/api/bookings/${bookingId}/cancel`,
+        {
+          refundDetails,
+          reason: refundDetails.reason,
+        },
+        {
+          withCredentials: true,
+          headers: {
+            "Content-Type": "application/json",
+          },
         }
-      });
+      );
 
       if (response.data.success) {
-        toast.success("Booking cancelled successfully. Refund will be processed within 3-5 business days.");
+        toast.success(
+          "Booking cancelled successfully. Refund will be processed within 3-5 business days."
+        );
         setShowCancelModal(false);
         setShowRefundForm(false);
-        setJustCancelled(true);
+
         // Refresh booking data
-        const { data } = await axios.get(`${backendUrl}/api/bookings/${bookingId}`);
+        const { data } = await axios.get(
+          `${backendUrl}/api/bookings/${bookingId}`
+        );
         if (data.success) {
           setBookingData(data.booking);
         }
@@ -131,7 +150,7 @@ const PaymentSuccess = () => {
   const handleRefundChange = (e) => {
     setRefundDetails({
       ...refundDetails,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
   };
 
@@ -355,7 +374,8 @@ Please present this ticket when boarding the bus
                 Booking Cancelled
               </h1>
               <p className="text-lg mb-6 text-center text-slate-300">
-                Your booking has been successfully cancelled. Refund will be processed within 3-5 business days to your bank account.
+                Your booking has been successfully cancelled. Refund will be
+                processed within 3-5 business days to your bank account.
               </p>
             </>
           ) : (
@@ -572,23 +592,32 @@ Please present this ticket when boarding the bus
                       </div>
                     )}
                     <div className="min-w-0">
-                      <p className={`font-medium ${bookingData.status === "cancelled" ? "text-red-500" : "text-yellow-300"}`}>
-                        {bookingData.status === "cancelled" ? "E-Receipt Not Available - Booking Cancelled" : "E-Receipt Not Available"}
+                      <p
+                        className={`font-medium ${
+                          bookingData.status === "cancelled"
+                            ? "text-red-500"
+                            : "text-yellow-300"
+                        }`}
+                      >
+                        {bookingData.status === "cancelled"
+                          ? "E-Receipt Not Available - Booking Cancelled"
+                          : "E-Receipt Not Available"}
                       </p>
                       <p className="text-sm text-slate-400">
-                        {bookingData.status === "cancelled" 
+                        {bookingData.status === "cancelled"
                           ? "E-receipt is not available because this booking has been cancelled. Refund will be processed to your bank account."
                           : `E-receipt will be available when your payment is approved, please check booking history. ${
-                              bookingData.status === "pending" && " Please complete your payment first."
+                              bookingData.status === "pending" &&
+                              " Please complete your payment first."
                             }${
-                              bookingData.status === "rejected" && " This booking has been rejected."
+                              bookingData.status === "rejected" &&
+                              " This booking has been rejected."
                             }`}
                       </p>
                     </div>
                   </div>
                 </div>
               )}
-
             </>
           ) : (
             <p className="text-yellow-400">
@@ -604,19 +633,21 @@ Please present this ticket when boarding the bus
             >
               Book Another Journey
             </Button>
-           
+
             <Button className="cursor-pointer " onClick={() => navigate("/")}>
               Go to Home
             </Button>
-            
-            {bookingData && canCancelBooking() && bookingData.status !== "cancelled" && (
-              <Button
-                className="cursor-pointer bg-transparent hover:bg-red-500 text-red-500 hover:text-white font-medium px-6 py-2 rounded-lg transition-all duration-200 border-2 border-red-500 hover:border-red-600"
-                onClick={handleCancelBooking}
-              >
-                Cancel Booking
-              </Button>
-            )}
+
+            {bookingData &&
+              canCancelBooking() &&
+              bookingData.status !== "cancelled" && (
+                <Button
+                  className="cursor-pointer bg-red-800 hover:bg-red-700 text-red-500 hover:text-white font-medium px-6 py-1 rounded-lg transition-all duration-200 border-2 border-red-900 hover:border-red-600"
+                  onClick={handleCancelBooking}
+                >
+                  Cancel Booking
+                </Button>
+              )}
           </div>
         </div>
       </div>
@@ -626,7 +657,9 @@ Please present this ticket when boarding the bus
         <div className="fixed inset-0 bg-slate-900 bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-slate-800 rounded-lg max-w-md w-full p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-semibold text-white">Cancel Booking</h3>
+              <h3 className="text-xl font-semibold text-white">
+                Cancel Booking
+              </h3>
               <button
                 onClick={() => setShowCancelModal(false)}
                 className="text-gray-400 hover:text-white"
@@ -634,21 +667,29 @@ Please present this ticket when boarding the bus
                 <X size={24} />
               </button>
             </div>
-            
+
             <div className="mb-6">
               <div className="flex items-center gap-3 mb-4 text-yellow-400">
                 <Clock size={20} />
                 <span className="font-medium">Cancellation Policy</span>
               </div>
               <p className="text-slate-300 text-sm mb-4">
-                You can cancel your booking within 1 hour of booking. A refund will be processed to your bank account.
+                You can cancel your booking within 1 hour of booking. A refund
+                will be processed to your bank account.
               </p>
-              
+
               <div className="bg-slate-700 p-4 rounded-lg">
                 <h4 className="font-medium text-white mb-2">Booking Details</h4>
-                <p className="text-slate-300 text-sm">Route: {bookingData?.boardingPoint} to {bookingData?.dropoffPoint}</p>
-                <p className="text-slate-300 text-sm">Date: {formatDate(bookingData?.journeyDate)}</p>
-                <p className="text-slate-300 text-sm">Amount: LKR {bookingData?.totalFare}</p>
+                <p className="text-slate-300 text-sm">
+                  Route: {bookingData?.boardingPoint} to{" "}
+                  {bookingData?.dropoffPoint}
+                </p>
+                <p className="text-slate-300 text-sm">
+                  Date: {formatDate(bookingData?.journeyDate)}
+                </p>
+                <p className="text-slate-300 text-sm">
+                  Amount: LKR {bookingData?.totalFare}
+                </p>
               </div>
             </div>
 
@@ -675,7 +716,9 @@ Please present this ticket when boarding the bus
         <div className="fixed inset-0 bg-slate-900 bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-slate-800 rounded-lg max-w-lg w-full p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-semibold text-white">Refund Details</h3>
+              <h3 className="text-xl font-semibold text-white">
+                Refund Details
+              </h3>
               <button
                 onClick={() => setShowRefundForm(false)}
                 className="text-gray-400 hover:text-white"
@@ -683,7 +726,7 @@ Please present this ticket when boarding the bus
                 <X size={24} />
               </button>
             </div>
-            
+
             <form onSubmit={handleRefundSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-2">
@@ -751,7 +794,8 @@ Please present this ticket when boarding the bus
                   <span className="font-medium">Important</span>
                 </div>
                 <p className="text-yellow-200 text-sm">
-                  Refund will be processed within 3-5 business days. Please ensure your bank details are correct.
+                  Refund will be processed within 3-5 business days. Please
+                  ensure your bank details are correct.
                 </p>
               </div>
 
@@ -767,7 +811,7 @@ Please present this ticket when boarding the bus
                       Cancelling...
                     </>
                   ) : (
-                    'Confirm Cancellation'
+                    "Confirm Cancellation"
                   )}
                 </Button>
                 <Button

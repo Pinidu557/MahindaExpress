@@ -125,7 +125,9 @@ const Contactus = () => {
             <MapPin className="w-6 h-6 text-white" />
             <div>
               <p className="font-semibold">Visit Us</p>
-              <p className="text-gray-200">No: 523/1 New Kandy Road,Biyagama</p>
+              <p className="text-gray-200">
+                No: 523/1, New Kandy Road, Biyagama
+              </p>
             </div>
           </div>
 

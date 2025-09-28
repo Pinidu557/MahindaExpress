@@ -1,14 +1,18 @@
 import React, { useContext } from "react";
 import { assets } from "../assets/assets";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { AppContent } from "../context/AppContext";
 import axios from "axios";
 import { toast } from "react-toastify";
 
 const PassengerNavbar = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { userData, backendUrl, setUserData, setIsLoggedin } =
     useContext(AppContent);
+
+  // Get current path without query parameters
+  const currentPath = location.pathname;
 
   const sendVerificationOtp = async () => {
     try {
@@ -43,18 +47,35 @@ const PassengerNavbar = () => {
     <div className="w-full flex justify-between items-center p-4 absolute top-0 sm:p-6 sm:px-24 bg-slate-950">
       <img
         src={assets.melogo4}
-        alt=""
-        className="w-60 cursor-pointer"
+        alt="Mahinda Express"
+        className={`w-60 cursor-pointer ${
+          currentPath === "/" ? "opacity-100" : "opacity-90"
+        }`}
         onClick={() => navigate("/")}
       />
       <ul className="list-none hidden md:flex gap-10 text-white font-semibold mr-auto ml-10 text-lg">
-        <li className="cursor-pointer" onClick={() => navigate("/journeys")}>
+        <li
+          className={`cursor-pointer ${
+            currentPath === "/journeys" ? "text-indigo-400 font-bold" : ""
+          }`}
+          onClick={() => navigate("/journeys")}
+        >
           Journeys
         </li>
-        <li className="cursor-pointer" onClick={() => navigate("/aboutus")}>
+        <li
+          className={`cursor-pointer ${
+            currentPath === "/aboutus" ? "text-indigo-400 font-bold" : ""
+          }`}
+          onClick={() => navigate("/aboutus")}
+        >
           About Us
         </li>
-        <li className="cursor-pointer" onClick={() => navigate("/contactus")}>
+        <li
+          className={`cursor-pointer ${
+            currentPath === "/contactus" ? "text-indigo-400 font-bold" : ""
+          }`}
+          onClick={() => navigate("/contactus")}
+        >
           Contact Us
         </li>
       </ul>
@@ -74,10 +95,14 @@ const PassengerNavbar = () => {
                 </li>
               )}
               <li
-                className="py-1 px-2 hover:bg-gray-200 cursor-pointer whitespace-nowrap mb-1"
+                className={`py-1 px-2 hover:bg-gray-200 cursor-pointer whitespace-nowrap mb-1 ${
+                  currentPath === "/passengerDashboard"
+                    ? "bg-gray-200 font-semibold"
+                    : ""
+                }`}
                 onClick={() => navigate("/passengerDashboard")}
               >
-                DashBoard
+                Dashboard
               </li>
               <li
                 onClick={logout}

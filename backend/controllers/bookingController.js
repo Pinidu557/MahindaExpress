@@ -33,6 +33,35 @@ const createBooking = async (req, res) => {
       .json({ success: false, message: "All fields are required." });
   }
 
+  // Validate passenger name (letters and spaces only)
+  const nameRegex = /^[A-Za-z\s]+$/;
+  if (!nameRegex.test(passengerName)) {
+    return res.status(400).json({
+      success: false,
+      message: "Passenger name should contain only letters",
+    });
+  }
+
+  // Validate mobile number (digits only, proper length)
+  const phoneRegex = /^[0-9]{10}$/;
+  if (!phoneRegex.test(mobileNumber)) {
+    return res.status(400).json({
+      success: false,
+      message: "Mobile number should be 10 digits",
+    });
+  }
+
+  // Validate email format if provided
+  if (email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        message: "Please enter a valid email address",
+      });
+    }
+  }
+
   try {
     const newBooking = new Booking({
       routeId,
@@ -80,23 +109,50 @@ const getBookedSeats = async (req, res) => {
     const endDate = new Date(journeyDate);
     endDate.setHours(23, 59, 59, 999);
 
-    // Find bookings with matching route and date
-    const bookings = await Booking.find({
+    // Find paid bookings
+    const paidBookings = await Booking.find({
       routeId: routeId,
       journeyDate: { $gte: startDate, $lte: endDate },
-      // Only consider confirmed (paid) bookings
-      status: "paid", // Only mark seats as booked if payment is complete
+      status: "paid",
     });
 
-    // Extract all seat numbers from the bookings
+    // Find pending bookings
+    const pendingBookings = await Booking.find({
+      routeId: routeId,
+      journeyDate: { $gte: startDate, $lte: endDate },
+      status: "pending",
+    });
+
+    // Find pending verification bookings
+    const pendingVerificationBookings = await Booking.find({
+      routeId: routeId,
+      journeyDate: { $gte: startDate, $lte: endDate },
+      status: "pending_verification",
+    });
+
+    // Extract all seat numbers from paid bookings
     let bookedSeats = [];
-    bookings.forEach((booking) => {
+    paidBookings.forEach((booking) => {
       bookedSeats = [...bookedSeats, ...booking.seats];
+    });
+
+    // Extract all seat numbers from pending bookings
+    let pendingSeats = [];
+    pendingBookings.forEach((booking) => {
+      pendingSeats = [...pendingSeats, ...booking.seats];
+    });
+
+    // Extract all seat numbers from pending verification bookings
+    let pendingVerificationSeats = [];
+    pendingVerificationBookings.forEach((booking) => {
+      pendingVerificationSeats = [...pendingVerificationSeats, ...booking.seats];
     });
 
     return res.status(200).json({
       success: true,
       bookedSeats: bookedSeats,
+      pendingSeats: pendingSeats,
+      pendingVerificationSeats: pendingVerificationSeats,
     });
   } catch (error) {
     console.error("Error fetching booked seats:", error);
@@ -223,9 +279,9 @@ const getAllBookings = async (req, res) => {
   try {
     // Find all bookings regardless of status, sort by newest first
     const bookings = await Booking.find().sort({ createdAt: -1 });
-    
+
     console.log(`Found ${bookings.length} total bookings`);
-    
+
     return res.status(200).json({
       success: true,
       bookings,
@@ -246,7 +302,11 @@ const cancelBooking = async (req, res) => {
     const { bookingId } = req.params;
     const { refundDetails, reason } = req.body;
 
-    console.log("Cancel booking request:", { bookingId, refundDetails, reason });
+    console.log("Cancel booking request:", {
+      bookingId,
+      refundDetails,
+      reason,
+    });
     console.log("Request params:", req.params);
     console.log("Request body:", req.body);
 
@@ -320,7 +380,8 @@ const cancelBooking = async (req, res) => {
 
     return res.json({
       success: true,
-      message: "Booking cancelled successfully. Refund will be processed within 3-5 business days.",
+      message:
+        "Booking cancelled successfully. Refund will be processed within 3-5 business days.",
       booking: booking,
     });
   } catch (error) {
@@ -339,7 +400,12 @@ const updateRefundStatus = async (req, res) => {
     const { bookingId } = req.params;
     const { refundStatus, processedAt, processedBy } = req.body;
 
-    console.log("Update refund status request:", { bookingId, refundStatus, processedAt, processedBy });
+    console.log("Update refund status request:", {
+      bookingId,
+      refundStatus,
+      processedAt,
+      processedBy,
+    });
 
     if (!bookingId) {
       return res.status(400).json({
@@ -381,7 +447,9 @@ const updateRefundStatus = async (req, res) => {
 
     await booking.save();
 
-    console.log(`Refund status updated for booking ${bookingId}: ${refundStatus}`);
+    console.log(
+      `Refund status updated for booking ${bookingId}: ${refundStatus}`
+    );
 
     return res.json({
       success: true,

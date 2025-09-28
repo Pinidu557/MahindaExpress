@@ -81,6 +81,35 @@ export const handleBankTransfer = async (req, res) => {
       });
     }
 
+    // Validate transaction reference (should not contain characters, only numbers)
+    const referenceRegex = /^[0-9]+$/;
+    if (!referenceRegex.test(transactionReference)) {
+      return res.status(400).json({
+        success: false,
+        message: "Transaction reference should contain only numbers",
+      });
+    }
+
+    // Validate payer name (should not contain numbers)
+    const nameRegex = /^[A-Za-z\s]+$/;
+    if (!nameRegex.test(payerName)) {
+      return res.status(400).json({
+        success: false,
+        message: "Payer name should contain only letters",
+      });
+    }
+
+    // Validate payment date (cannot be a future date)
+    const paymentDateObj = new Date(paymentDate);
+    const currentDate = new Date();
+
+    if (paymentDateObj > currentDate) {
+      return res.status(400).json({
+        success: false,
+        message: "Payment date cannot be in the future",
+      });
+    }
+
     // Find the booking
     const booking = await Booking.findById(bookingId);
     if (!booking) {

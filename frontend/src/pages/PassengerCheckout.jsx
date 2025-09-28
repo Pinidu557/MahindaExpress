@@ -160,6 +160,8 @@ const SeatBooking = () => {
   ];
 
   const [bookedSeats, setBookedSeats] = useState([]);
+  const [pendingSeats, setPendingSeats] = useState([]);
+  const [pendingVerificationSeats, setPendingVerificationSeats] = useState([]);
   const [isLoadingSeats, setIsLoadingSeats] = useState(true);
 
   const [seats, setSeats] = useState([]);
@@ -241,7 +243,9 @@ const SeatBooking = () => {
           }
         );
         if (data.success) {
-          setBookedSeats(data.bookedSeats);
+          setBookedSeats(data.bookedSeats || []);
+          setPendingSeats(data.pendingSeats || []);
+          setPendingVerificationSeats(data.pendingVerificationSeats || []);
         } else {
           toast.error("Could not load seat availability");
         }
@@ -283,7 +287,7 @@ const SeatBooking = () => {
 
   // Handle seat selection
   const toggleSeat = (seat) => {
-    if (!seat || bookedSeats.includes(seat)) return;
+    if (!seat || bookedSeats.includes(seat) || pendingSeats.includes(seat) || pendingVerificationSeats.includes(seat)) return;
     if (seats.includes(seat)) {
       setSeats(seats.filter((s) => s !== seat));
     } else {
@@ -466,11 +470,13 @@ const SeatBooking = () => {
                           ${
                             bookedSeats.includes(seat)
                               ? "bg-red-800 cursor-not-allowed"
+                              : pendingSeats.includes(seat) || pendingVerificationSeats.includes(seat)
+                              ? "bg-orange-600 cursor-not-allowed"
                               : seats.includes(seat)
                               ? "bg-indigo-500"
                               : "bg-green-600 hover:bg-green-500"
                           }`}
-                        disabled={bookedSeats.includes(seat)}
+                        disabled={bookedSeats.includes(seat) || pendingSeats.includes(seat) || pendingVerificationSeats.includes(seat)}
                       >
                         {seat}
                       </button>
@@ -670,6 +676,9 @@ const SeatBooking = () => {
           </div> */}
           <div className="flex items-center gap-2">
             <span className="w-5 h-5 bg-green-600 rounded"></span> Available
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-5 h-5 bg-orange-600 rounded"></span> Pending
           </div>
           <div className="flex items-center gap-2">
             <span className="w-5 h-5 bg-red-800 rounded"></span> Already Booked

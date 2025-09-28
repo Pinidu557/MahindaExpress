@@ -46,13 +46,13 @@ const UserManagement = () => {
   // Function to handle custom date change with validation
   const handleCustomDateChange = (e) => {
     const selectedDate = e.target.value;
-    const today = new Date().toISOString().split('T')[0];
-    
+    const today = new Date().toISOString().split("T")[0];
+
     // If selected date is in the future, don't update the state
     if (selectedDate > today) {
       return; // Don't allow future dates
     }
-    
+
     setCustomDate(selectedDate);
   };
   const [selectedReceipt, setSelectedReceipt] = useState(null);
@@ -85,7 +85,10 @@ const UserManagement = () => {
       const { data } = await api.get("/api/bookings/all");
       console.log("API Response:", data);
       console.log("Fetched bookings:", data.bookings?.length, "bookings");
-      console.log("Booking statuses:", data.bookings?.map(b => b.status));
+      console.log(
+        "Booking statuses:",
+        data.bookings?.map((b) => b.status)
+      );
       console.log("All booking data:", data.bookings);
       if (data.success) {
         setBookings(data.bookings || []);
@@ -109,8 +112,9 @@ const UserManagement = () => {
       // Fetch all bookings and filter for cancelled ones with refund details
       const { data } = await api.get("/api/bookings/all");
       if (data.success) {
-        const cancelledBookings = data.bookings.filter(booking => 
-          booking.status === "cancelled" && booking.cancellationDetails
+        const cancelledBookings = data.bookings.filter(
+          (booking) =>
+            booking.status === "cancelled" && booking.cancellationDetails
         );
         setRefunds(cancelledBookings);
       } else {
@@ -118,7 +122,10 @@ const UserManagement = () => {
       }
     } catch (error) {
       console.error("Error fetching refunds:", error);
-      toast.error("Failed to load refunds: " + (error.response?.data?.message || error.message));
+      toast.error(
+        "Failed to load refunds: " +
+          (error.response?.data?.message || error.message)
+      );
     } finally {
       setIsLoading(false);
     }
@@ -208,7 +215,7 @@ const UserManagement = () => {
       const { data } = await api.put(`/api/bookings/${bookingId}/refund`, {
         refundStatus: status,
         processedAt: new Date(),
-        processedBy: "Admin" // In real app, get from auth context
+        processedBy: "Admin", // In real app, get from auth context
       });
 
       if (data.success) {
@@ -246,23 +253,28 @@ Status: ${refund.cancellationDetails?.refundStatus}
   };
 
   const deleteUser = async (userId) => {
-    if (!confirm("Are you sure you want to delete this user account? This action cannot be undone.")) {
+    if (
+      !confirm(
+        "Are you sure you want to delete this user account? This action cannot be undone."
+      )
+    ) {
       return;
     }
-    
+
     try {
       // Set deleting state for animation
       setDeletingUserId(userId);
-      
+
       await api.delete(`/api/user/${userId}`);
-      
+
       // Wait for animation to complete before removing from list
       setTimeout(() => {
-        setUsers(prevUsers => prevUsers.filter(user => user._id !== userId));
+        setUsers((prevUsers) =>
+          prevUsers.filter((user) => user._id !== userId)
+        );
         setDeletingUserId(null);
         toast.success("User account deleted successfully");
       }, 300); // Animation duration
-      
     } catch (error) {
       console.error("Error deleting user:", error);
       setDeletingUserId(null);
@@ -491,12 +503,12 @@ Status: ${refund.cancellationDetails?.refundStatus}
                         return matchesSearch && matchesStatus;
                       })
                       .map((user) => (
-                        <tr 
-                          key={user._id} 
+                        <tr
+                          key={user._id}
                           className={`hover:bg-slate-700 transition-all duration-300 ${
-                            deletingUserId === user._id 
-                              ? 'opacity-0 scale-95 transform -translate-x-4' 
-                              : 'opacity-100 scale-100 transform translate-x-0'
+                            deletingUserId === user._id
+                              ? "opacity-0 scale-95 transform -translate-x-4"
+                              : "opacity-100 scale-100 transform translate-x-0"
                           }`}
                         >
                           <td className="px-6 py-4 whitespace-nowrap">
@@ -547,17 +559,25 @@ Status: ${refund.cancellationDetails?.refundStatus}
                               </button>
                               <button
                                 className={`${
-                                  deletingUserId === user._id 
-                                    ? 'text-gray-400 cursor-not-allowed' 
-                                    : 'text-red-500 hover:text-red-400 cursor-pointer'
+                                  deletingUserId === user._id
+                                    ? "text-gray-400 cursor-not-allowed"
+                                    : "text-red-500 hover:text-red-400 cursor-pointer"
                                 } transition-colors duration-200`}
                                 onClick={() => deleteUser(user._id)}
                                 disabled={deletingUserId === user._id}
-                                title={deletingUserId === user._id ? "Deleting..." : "Delete User"}
+                                title={
+                                  deletingUserId === user._id
+                                    ? "Deleting..."
+                                    : "Delete User"
+                                }
                               >
-                                <Trash2 className={`w-5 h-5 ${
-                                  deletingUserId === user._id ? 'animate-pulse' : ''
-                                }`} />
+                                <Trash2
+                                  className={`w-5 h-5 ${
+                                    deletingUserId === user._id
+                                      ? "animate-pulse"
+                                      : ""
+                                  }`}
+                                />
                               </button>
                             </div>
                           </td>
@@ -659,10 +679,9 @@ Status: ${refund.cancellationDetails?.refundStatus}
                         type="date"
                         value={customDate}
                         onChange={handleCustomDateChange}
-                        max={new Date().toISOString().split('T')[0]}
+                        max={new Date().toISOString().split("T")[0]}
                         className="px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       />
-                      
                     </div>
                   )}
                 </div>
@@ -676,67 +695,91 @@ Status: ${refund.cancellationDetails?.refundStatus}
               ) : bookings && bookings.length > 0 ? (
                 <div className="space-y-4">
                   {bookings
-                    .filter(
-                      (booking) => {
-                        // Search filter
-                        const matchesSearch = 
-                          searchTerm === "" ||
-                          booking.passengerName
-                            ?.toLowerCase()
-                            .includes(searchTerm.toLowerCase()) ||
-                          booking._id?.toString().includes(searchTerm) ||
-                          booking.boardingPoint
-                            ?.toLowerCase()
-                            .includes(searchTerm.toLowerCase()) ||
-                          booking.dropoffPoint
-                            ?.toLowerCase()
-                            .includes(searchTerm.toLowerCase());
+                    .filter((booking) => {
+                      // Search filter
+                      const matchesSearch =
+                        searchTerm === "" ||
+                        booking.passengerName
+                          ?.toLowerCase()
+                          .includes(searchTerm.toLowerCase()) ||
+                        booking._id?.toString().includes(searchTerm) ||
+                        booking.boardingPoint
+                          ?.toLowerCase()
+                          .includes(searchTerm.toLowerCase()) ||
+                        booking.dropoffPoint
+                          ?.toLowerCase()
+                          .includes(searchTerm.toLowerCase());
 
-                        // Status filter
-                        const matchesStatus = 
-                          bookingStatusFilter === "all" || 
-                          booking.status === bookingStatusFilter;
+                      // Status filter
+                      const matchesStatus =
+                        bookingStatusFilter === "all" ||
+                        booking.status === bookingStatusFilter;
 
-                        // Date filter
-                        const matchesDate = (() => {
-                          if (dateFilter === "all") return true;
-                          
-                          const bookingDate = new Date(booking.createdAt || booking.journeyDate);
-                          const today = new Date();
-                          const yesterday = new Date(today);
-                          yesterday.setDate(yesterday.getDate() - 1);
-                          
-                          // Reset time to start of day for comparison
-                          const bookingDateOnly = new Date(bookingDate.getFullYear(), bookingDate.getMonth(), bookingDate.getDate());
-                          const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-                          const yesterdayOnly = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
-                          
-                          if (dateFilter === "today") {
-                            return bookingDateOnly.getTime() === todayOnly.getTime();
-                          } else if (dateFilter === "yesterday") {
-                            return bookingDateOnly.getTime() === yesterdayOnly.getTime();
-                          } else if (dateFilter === "custom" && customDate) {
-                            // Parse custom date and create date object for comparison
-                            const [year, month, day] = customDate.split('-').map(Number);
-                            const customDateOnly = new Date(year, month - 1, day);
-                            
-                            // Debug logging
-                            console.log('Custom date filter:', {
-                              customDate,
-                              customDateOnly: customDateOnly.toDateString(),
-                              bookingDateOnly: bookingDateOnly.toDateString(),
-                              matches: bookingDateOnly.getTime() === customDateOnly.getTime()
-                            });
-                            
-                            return bookingDateOnly.getTime() === customDateOnly.getTime();
-                          }
-                          
-                          return true;
-                        })();
+                      // Date filter
+                      const matchesDate = (() => {
+                        if (dateFilter === "all") return true;
 
-                        return matchesSearch && matchesStatus && matchesDate;
-                      }
-                    )
+                        const bookingDate = new Date(
+                          booking.createdAt || booking.journeyDate
+                        );
+                        const today = new Date();
+                        const yesterday = new Date(today);
+                        yesterday.setDate(yesterday.getDate() - 1);
+
+                        // Reset time to start of day for comparison
+                        const bookingDateOnly = new Date(
+                          bookingDate.getFullYear(),
+                          bookingDate.getMonth(),
+                          bookingDate.getDate()
+                        );
+                        const todayOnly = new Date(
+                          today.getFullYear(),
+                          today.getMonth(),
+                          today.getDate()
+                        );
+                        const yesterdayOnly = new Date(
+                          yesterday.getFullYear(),
+                          yesterday.getMonth(),
+                          yesterday.getDate()
+                        );
+
+                        if (dateFilter === "today") {
+                          return (
+                            bookingDateOnly.getTime() === todayOnly.getTime()
+                          );
+                        } else if (dateFilter === "yesterday") {
+                          return (
+                            bookingDateOnly.getTime() ===
+                            yesterdayOnly.getTime()
+                          );
+                        } else if (dateFilter === "custom" && customDate) {
+                          // Parse custom date and create date object for comparison
+                          const [year, month, day] = customDate
+                            .split("-")
+                            .map(Number);
+                          const customDateOnly = new Date(year, month - 1, day);
+
+                          // Debug logging
+                          console.log("Custom date filter:", {
+                            customDate,
+                            customDateOnly: customDateOnly.toDateString(),
+                            bookingDateOnly: bookingDateOnly.toDateString(),
+                            matches:
+                              bookingDateOnly.getTime() ===
+                              customDateOnly.getTime(),
+                          });
+
+                          return (
+                            bookingDateOnly.getTime() ===
+                            customDateOnly.getTime()
+                          );
+                        }
+
+                        return true;
+                      })();
+
+                      return matchesSearch && matchesStatus && matchesDate;
+                    })
                     .sort((a, b) => {
                       // Sort by newest first by default
                       const dateA = new Date(a.createdAt || a.journeyDate);
@@ -836,7 +879,9 @@ Status: ${refund.cancellationDetails?.refundStatus}
                               <span className="inline-flex items-center px-2 py-1 bg-slate-800 rounded-md text-xs">
                                 <User className="w-3 h-3 mr-1 text-indigo-400" />
                                 {booking.seats ? booking.seats.length : 1}{" "}
-                                {booking.seats && booking.seats.length > 1 ? "Seats" : "Seat"}
+                                {booking.seats && booking.seats.length > 1
+                                  ? "Seats"
+                                  : "Seat"}
                               </span>
                               {booking.paymentMethod && (
                                 <span className="inline-flex items-center px-2 py-1 bg-slate-800 rounded-md text-xs">
@@ -1240,7 +1285,6 @@ Status: ${refund.cancellationDetails?.refundStatus}
                     )}
                   </div>
                 </div>
-
               </div>
             </div>
           </div>
@@ -1250,7 +1294,7 @@ Status: ${refund.cancellationDetails?.refundStatus}
       {/* Refund Management Tab Content */}
       {activeTab === "refunds" && (
         <div className="space-y-6">
-          <div className="bg-slate-800 rounded-lg shadow-lg p-6 w-[88%] mx-auto">
+          <div className="bg-slate-800 rounded-lg shadow-lg p-6 w-[88%] mx-auto -mt-7">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-semibold">Refund Management</h2>
               <div className="flex gap-4">
@@ -1282,7 +1326,10 @@ Status: ${refund.cancellationDetails?.refundStatus}
                 {refunds
                   .filter((refund) => {
                     if (refundStatusFilter === "all") return true;
-                    return refund.cancellationDetails?.refundStatus === refundStatusFilter;
+                    return (
+                      refund.cancellationDetails?.refundStatus ===
+                      refundStatusFilter
+                    );
                   })
                   .map((refund) => (
                     <div
@@ -1292,60 +1339,119 @@ Status: ${refund.cancellationDetails?.refundStatus}
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         {/* Booking Details */}
                         <div>
-                          <h3 className="font-semibold text-white mb-2">Booking Details</h3>
+                          <h3 className="font-semibold text-white mb-2">
+                            Booking Details
+                          </h3>
                           <div className="space-y-1 text-sm">
-                            <p><span className="text-gray-400">Booking ID:</span> {refund._id}</p>
-                            <p><span className="text-gray-400">Route:</span> {refund.boardingPoint} to {refund.dropoffPoint}</p>
-                            <p><span className="text-gray-400">Date:</span> {formatDate(refund.journeyDate)}</p>
-                            <p><span className="text-gray-400">Amount:</span> LKR {refund.totalFare}</p>
+                            <p>
+                              <span className="text-gray-400">Booking ID:</span>{" "}
+                              {refund._id}
+                            </p>
+                            <p>
+                              <span className="text-gray-400">Route:</span>{" "}
+                              {refund.boardingPoint} to {refund.dropoffPoint}
+                            </p>
+                            <p>
+                              <span className="text-gray-400">Date:</span>{" "}
+                              {formatDate(refund.journeyDate)}
+                            </p>
+                            <p>
+                              <span className="text-gray-400">Amount:</span> LKR{" "}
+                              {refund.totalFare}
+                            </p>
                           </div>
                         </div>
 
                         {/* Customer Details */}
                         <div>
-                          <h3 className="font-semibold text-white mb-2">Customer Details</h3>
+                          <h3 className="font-semibold text-white mb-2">
+                            Customer Details
+                          </h3>
                           <div className="space-y-1 text-sm">
-                            <p><span className="text-gray-400">Name:</span> {refund.passengerName}</p>
-                            <p><span className="text-gray-400">Email:</span> {refund.email}</p>
-                            <p><span className="text-gray-400">Phone:</span> {refund.mobileNumber}</p>
+                            <p>
+                              <span className="text-gray-400">Name:</span>{" "}
+                              {refund.passengerName}
+                            </p>
+                            <p>
+                              <span className="text-gray-400">Email:</span>{" "}
+                              {refund.email}
+                            </p>
+                            <p>
+                              <span className="text-gray-400">Phone:</span>{" "}
+                              {refund.mobileNumber}
+                            </p>
                           </div>
                         </div>
 
                         {/* Refund Details */}
                         <div>
-                          <h3 className="font-semibold text-white mb-2">Refund Details</h3>
+                          <h3 className="font-semibold text-white mb-2">
+                            Refund Details
+                          </h3>
                           <div className="space-y-1 text-sm">
-                            <p><span className="text-gray-400">Status:</span> 
-                              <span className={`ml-2 px-2 py-1 rounded-full text-xs ${
-                                refund.cancellationDetails?.refundStatus === "processed" 
-                                  ? "bg-green-900 text-green-300"
-                                  : refund.cancellationDetails?.refundStatus === "failed"
-                                  ? "bg-red-900 text-red-300"
-                                  : "bg-yellow-900 text-yellow-300"
-                              }`}>
-                                {refund.cancellationDetails?.refundStatus || "pending"}
+                            <p>
+                              <span className="text-gray-400">Status:</span>
+                              <span
+                                className={`ml-2 px-2 py-1 rounded-full text-xs ${
+                                  refund.cancellationDetails?.refundStatus ===
+                                  "processed"
+                                    ? "bg-green-900 text-green-300"
+                                    : refund.cancellationDetails
+                                        ?.refundStatus === "failed"
+                                    ? "bg-red-900 text-red-300"
+                                    : "bg-yellow-900 text-yellow-300"
+                                }`}
+                              >
+                                {refund.cancellationDetails?.refundStatus ||
+                                  "pending"}
                               </span>
                             </p>
-                            <p><span className="text-gray-400">Bank:</span> {refund.cancellationDetails?.refundDetails?.bankName}</p>
-                            <p><span className="text-gray-400">Account:</span> {refund.cancellationDetails?.refundDetails?.accountNumber}</p>
-                            <p><span className="text-gray-400">Holder:</span> {refund.cancellationDetails?.refundDetails?.accountHolderName}</p>
-                            <p><span className="text-gray-400">Reason:</span> {refund.cancellationDetails?.reason}</p>
+                            <p>
+                              <span className="text-gray-400">Bank:</span>{" "}
+                              {
+                                refund.cancellationDetails?.refundDetails
+                                  ?.bankName
+                              }
+                            </p>
+                            <p>
+                              <span className="text-gray-400">Account:</span>{" "}
+                              {
+                                refund.cancellationDetails?.refundDetails
+                                  ?.accountNumber
+                              }
+                            </p>
+                            <p>
+                              <span className="text-gray-400">Holder:</span>{" "}
+                              {
+                                refund.cancellationDetails?.refundDetails
+                                  ?.accountHolderName
+                              }
+                            </p>
+                            <p>
+                              <span className="text-gray-400">Reason:</span>{" "}
+                              {refund.cancellationDetails?.reason}
+                            </p>
                           </div>
                         </div>
                       </div>
 
                       {/* Action Buttons */}
                       <div className="mt-4 pt-4 border-t border-slate-600 flex gap-2">
-                        {refund.cancellationDetails?.refundStatus === "pending" && (
+                        {refund.cancellationDetails?.refundStatus ===
+                          "pending" && (
                           <>
                             <button
-                              onClick={() => handleProcessRefund(refund._id, "processed")}
+                              onClick={() =>
+                                handleProcessRefund(refund._id, "processed")
+                              }
                               className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors"
                             >
                               Mark as Processed
                             </button>
                             <button
-                              onClick={() => handleProcessRefund(refund._id, "failed")}
+                              onClick={() =>
+                                handleProcessRefund(refund._id, "failed")
+                              }
                               className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors"
                             >
                               Mark as Failed

@@ -17,7 +17,7 @@ const faqs = [
   {
     question: "Can I cancel my booking?",
     answer:
-      "Yes, you can cancel your booking within five hours according to policies.",
+      "Yes, you can cancel your booking within one hours according to policies.",
   },
   {
     question: "Is my payment information secure?",

@@ -340,28 +340,73 @@ const BookingDetails = () => {
                       Payment Method:
                     </span>
                     <span className="font-medium">
-                      {booking.paymentMethod === "bank_transfer" 
-                        ? "Bank Transfer" 
+                      {booking.paymentMethod === "bank_transfer"
+                        ? "Bank Transfer"
                         : "Credit/Debit Card"}
                     </span>
                   </div>
+                  {booking.status === "cancelled" &&
+                    booking.cancellationDetails && (
+                      <div className="mt-2 mb-2 col-span-2">
+                        <span className="text-slate-300 block mb-1">
+                          Cancellation Details:
+                        </span>
+                        <div className="  rounded-md">
+                          <p className="text-xs text-red-300 mb-1">
+                            Cancelled on{" "}
+                            {formatDate(
+                              booking.cancellationDetails.cancelledAt
+                            )}
+                          </p>
+                          <p className="text-xs text-slate-400">
+                            Reason:{" "}
+                            {booking.cancellationDetails.reason ||
+                              "Not specified"}
+                          </p>
+                          <p className="text-xs text-slate-400 mt-1">
+                            Refund Status:{" "}
+                            <span
+                              className={`${
+                                booking.cancellationDetails.refundStatus ===
+                                "processed"
+                                  ? "text-green-400"
+                                  : booking.cancellationDetails.refundStatus ===
+                                    "failed"
+                                  ? "text-red-400"
+                                  : "text-yellow-400"
+                              }`}
+                            >
+                              {booking.cancellationDetails.refundStatus
+                                ?.charAt(0)
+                                .toUpperCase() +
+                                booking.cancellationDetails.refundStatus?.slice(
+                                  1
+                                ) || "Pending"}
+                            </span>
+                          </p>
+                        </div>
+                      </div>
+                    )}
                   <div>
                     <span className="text-slate-300 block">
                       Payment Status:
                     </span>
-                    <span 
+                    <span
                       className={`font-medium ${
-                        booking.status === "paid" 
-                          ? "text-green-400" 
-                          : booking.status === "rejected"
+                        booking.status === "paid"
+                          ? "text-green-400"
+                          : booking.status === "rejected" ||
+                            booking.status === "cancelled"
                           ? "text-red-400"
                           : "text-yellow-400"
                       }`}
                     >
-                      {booking.status === "paid" 
-                        ? "Paid" 
+                      {booking.status === "paid"
+                        ? "Paid"
                         : booking.status === "rejected"
                         ? "Rejected"
+                        : booking.status === "cancelled"
+                        ? "Cancelled"
                         : "Pending"}
                     </span>
                   </div>
@@ -400,12 +445,17 @@ const BookingDetails = () => {
                         <span className="text-yellow-200 text-sm">!</span>
                       </div>
                       <div className="min-w-0">
-                        <p className="font-medium text-yellow-300">E-Receipt Not Available</p>
+                        <p className="font-medium text-yellow-300">
+                          E-Receipt Not Available
+                        </p>
                         <p className="text-sm text-slate-400">
-                          E-receipt can only be downloaded for paid bookings. 
-                          {booking.status === "pending" && " Please complete your payment first."}
-                          {booking.status === "rejected" && " This booking has been rejected."}
-                          {booking.status === "cancelled" && " This booking has been cancelled."}
+                          E-receipt can only be downloaded for paid bookings.
+                          {booking.status === "pending" &&
+                            " Please complete your payment first."}
+                          {booking.status === "rejected" &&
+                            " This booking has been rejected."}
+                          {booking.status === "cancelled" &&
+                            " This booking has been cancelled."}
                         </p>
                       </div>
                     </div>
