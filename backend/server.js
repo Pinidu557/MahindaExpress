@@ -6,7 +6,7 @@ import path from "path";
 import mongoose from "mongoose";
 import { fileURLToPath } from "url";
 import connectDB from "./config/mongodb.js";
-
+import adminRoutes from "./routes/adminRoutes.js";
 // Staff Management Routes
 import staffRoutes from "./Routes/staffRoutes.js";
 import attendanceRoutes from "./Routes/attendanceRoutes.js";
@@ -105,6 +105,7 @@ app.use("/reports", reportRoutes);
 app.use("/api/auth", userRouter);
 app.use("/api/user", userDetailsRouter);
 app.use("/api/routes", routeRoutes);
+app.use("/api/admin", adminRoutes);
 app.use("/api/vehicles", vehicleRoutes); // Using vehicleRoutes from vehicalRoutes.js
 app.use("/api/contacts", contactRouter);
 app.use("/api/bookings", bookingRouter);

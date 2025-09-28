@@ -1,4 +1,6 @@
+
 import React from "react";
+
 import {
   BrowserRouter as Router,
   Routes,
@@ -6,6 +8,9 @@ import {
   NavLink,
   Navigate,
 } from "react-router-dom";
+
+import AdminLogin from "./pages/AdminLogin";
+ 
 import ScrollToTop from "./components/ScrollToTop";
 // Staff Management imports
 import DashboardHirun from "./pages/DashboardHirun.jsx";
@@ -29,6 +34,7 @@ import PassengerAboutus from "./pages/PassengerAboutus";
 import Contactus from "./pages/PassengerContactus";
 import PassengerCheckout from "./pages/PassengerCheckout";
 import PassengerFaqs from "./pages/PassengerFaqs";
+import { AppContent } from "../context/AppContext";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import PassengerPayment from "./pages/PassengerPayment";
@@ -143,7 +149,12 @@ const NotFound = () => (
 
 // Main App component
 function App() {
+  const { isLoggedin } = useContext(AppContent);
   return (
+    <>
+      <Routes>
+        {/* Passenger routes */}
+
     <div>
       <ToastContainer
         position="top-right"
@@ -160,15 +171,41 @@ function App() {
       <ScrollToTop />
       <Routes>
         {/* Passenger Routes */}
+
         <Route path="/" element={<PassengerHome />} />
         <Route path="/login" element={<PassengerLogin />} />
         <Route path="/email-verify" element={<PassengerEmailVerify />} />
         <Route path="/reset-password" element={<PassengerRestPassword />} />
         <Route path="/journeys" element={<PassengerJourney />} />
-        <Route path="aboutus" element={<PassengerAboutus />} />
+        <Route path="/aboutus" element={<PassengerAboutus />} />
         <Route path="/contactus" element={<Contactus />} />
         <Route path="/journeys/checkout" element={<PassengerCheckout />} />
         <Route path="/faqs" element={<PassengerFaqs />} />
+
+
+        {/* Admin login page - public */}
+        <Route path="/admin/login" element={<AdminLogin />} />
+
+        {/* Protected admin routes */}
+        <Route
+          path="/dashboard"
+          element={isLoggedin ? <Dashboard /> : <Navigate to="/admin/login" />}
+        />
+        <Route
+          path="/routes"
+          element={isLoggedin ? <RoutesPage /> : <Navigate to="/admin/login" />}
+        />
+        <Route
+          path="/vehicles"
+          element={
+            isLoggedin ? <VehiclesPage /> : <Navigate to="/admin/login" />
+          }
+        />
+      </Routes>
+
+      <ToastContainer position="top-right" autoClose={3000} />
+    </>
+
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/routes" element={<RoutesPage />} />
         <Route path="/vehicles" element={<VehiclesPage />} />
@@ -308,6 +345,7 @@ function App() {
         <Route path="*" element={<NotFound />} />
       </Routes>
     </div>
+
   );
 }
 
