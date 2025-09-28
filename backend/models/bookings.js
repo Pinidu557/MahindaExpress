@@ -13,6 +13,12 @@ const bookingSchema = new mongoose.Schema(
       ref: "Route",
       required: true,
     },
+    routeNumber: {
+      type: String,
+    },
+    routeName: {
+      type: String,
+    },
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -82,6 +88,23 @@ const bookingSchema = new mongoose.Schema(
       rejectedAt: Date,
       rejectedBy: String,
       rejectionReason: String,
+    },
+    cancellationDetails: {
+      cancelledAt: Date,
+      reason: String,
+      refundDetails: {
+        bankName: String,
+        accountNumber: String,
+        accountHolderName: String,
+      },
+      refundStatus: {
+        type: String,
+        enum: ["pending", "processed", "failed"],
+        default: "pending",
+      },
+      refundProcessedAt: Date,
+      refundProcessedBy: String,
+      refundReference: String,
     },
   },
   { timestamps: true }

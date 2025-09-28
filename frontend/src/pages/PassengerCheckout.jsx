@@ -160,6 +160,8 @@ const SeatBooking = () => {
   ];
 
   const [bookedSeats, setBookedSeats] = useState([]);
+  const [pendingSeats, setPendingSeats] = useState([]);
+  const [pendingVerificationSeats, setPendingVerificationSeats] = useState([]);
   const [isLoadingSeats, setIsLoadingSeats] = useState(true);
 
   const [seats, setSeats] = useState([]);
@@ -173,6 +175,11 @@ const SeatBooking = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [availableStops, setAvailableStops] = useState([]);
   const [routeKey, setRouteKey] = useState("");
+
+  // Validation states
+  const [nameError, setNameError] = useState(false);
+  const [mobileError, setMobileError] = useState(false);
+  const [emailError, setEmailError] = useState("");
 
   // Set default journey details from route data
   useEffect(() => {
@@ -241,7 +248,9 @@ const SeatBooking = () => {
           }
         );
         if (data.success) {
-          setBookedSeats(data.bookedSeats);
+          setBookedSeats(data.bookedSeats || []);
+          setPendingSeats(data.pendingSeats || []);
+          setPendingVerificationSeats(data.pendingVerificationSeats || []);
         } else {
           toast.error("Could not load seat availability");
         }
@@ -283,7 +292,13 @@ const SeatBooking = () => {
 
   // Handle seat selection
   const toggleSeat = (seat) => {
-    if (!seat || bookedSeats.includes(seat)) return;
+    if (
+      !seat ||
+      bookedSeats.includes(seat) ||
+      pendingSeats.includes(seat) ||
+      pendingVerificationSeats.includes(seat)
+    )
+      return;
     if (seats.includes(seat)) {
       setSeats(seats.filter((s) => s !== seat));
     } else {
@@ -293,6 +308,21 @@ const SeatBooking = () => {
 
   // Calculate total fare
   const totalFare = seats.length * (routeData.fare || 895);
+
+  // Check if all required form fields are filled
+  const isFormValid = () => {
+    return (
+      seats.length > 0 &&
+      PassengerName.trim() !== "" &&
+      mobileNumber.trim() !== "" &&
+      boardingPoint.trim() !== "" &&
+      dropoffPoint.trim() !== "" &&
+      gender.trim() !== "" &&
+      !nameError &&
+      !mobileError &&
+      !emailError
+    );
+  };
 
   // Handle form submission (create or update booking)
   const onSubmieHandler = async (e) => {
@@ -466,11 +496,18 @@ const SeatBooking = () => {
                           ${
                             bookedSeats.includes(seat)
                               ? "bg-red-800 cursor-not-allowed"
+                              : pendingSeats.includes(seat) ||
+                                pendingVerificationSeats.includes(seat)
+                              ? "bg-orange-600 cursor-not-allowed"
                               : seats.includes(seat)
                               ? "bg-indigo-500"
                               : "bg-green-600 hover:bg-green-500"
                           }`}
-                        disabled={bookedSeats.includes(seat)}
+                        disabled={
+                          bookedSeats.includes(seat) ||
+                          pendingSeats.includes(seat) ||
+                          pendingVerificationSeats.includes(seat)
+                        }
                       >
                         {seat}
                       </button>
@@ -499,35 +536,122 @@ const SeatBooking = () => {
           </p>
 
           <form className="flex flex-col gap-8" onSubmit={onSubmieHandler}>
-            <input
-              type="text"
-              placeholder="Passenger Name"
-              className="px-3 py-2 rounded-lg bg-slate-700 text-white placeholder-gray-400 focus:outline-none"
-              value={PassengerName}
-              onChange={(e) => setPassengerName(e.target.value)}
-              required
-            />
-            <input
-              type="text"
-              placeholder="Mobile Number"
-              className="px-3 py-2 rounded-lg bg-slate-700 text-white placeholder-gray-400 focus:outline-none"
-              value={mobileNumber}
-              onChange={(e) => setMobileNumber(e.target.value)}
-              required
-            />
+            <div className="flex flex-col w-full">
+              <input
+                type="text"
+                placeholder="Passenger Name"
+                className={`px-3 py-2 rounded-lg bg-slate-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 border ${
+                  nameError
+                    ? "border-red-500"
+                    : "border-transparent hover:border-slate-600"
+                }`}
+                value={PassengerName}
+                onChange={(e) => {
+                  // Allow only letters and spaces (no numbers or special characters)
+                  if (
+                    /^[A-Za-z\s]*$/.test(e.target.value) ||
+                    e.target.value === ""
+                  ) {
+                    setPassengerName(e.target.value);
+                    // Reset error when valid input is entered
+                    if (nameError) setNameError(false);
+                  }
+                }}
+                onKeyDown={(e) => {
+                  // Block keys that are numbers or special characters
+                  if (
+                    !/^[A-Za-z\s]$/.test(e.key) &&
+                    e.key !== "Backspace" &&
+                    e.key !== "Delete" &&
+                    e.key !== "ArrowLeft" &&
+                    e.key !== "ArrowRight" &&
+                    e.key !== "Tab"
+                  ) {
+                    setNameError(true);
+                    e.preventDefault();
+                  }
+                }}
+                required
+              />
+              {nameError && (
+                <p className="text-red-400 text-xs ml-2 mt-1">
+                  Only letters are allowed
+                </p>
+              )}
+            </div>
+            <div className="flex flex-col w-full">
+              <input
+                type="text"
+                placeholder="Mobile Number"
+                className={`px-3 py-2 rounded-lg bg-slate-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 border ${
+                  mobileError
+                    ? "border-red-500"
+                    : "border-transparent hover:border-slate-600"
+                }`}
+                value={mobileNumber}
+                onChange={(e) => {
+                  // Allow only numbers
+                  if (
+                    /^[0-9]*$/.test(e.target.value) ||
+                    e.target.value === ""
+                  ) {
+                    setMobileNumber(e.target.value);
+                    // Reset error when valid input is entered
+                    if (mobileError) setMobileError(false);
+                  }
+                }}
+                onKeyDown={(e) => {
+                  // Block keys that are not numbers or control keys
+                  if (
+                    !/^[0-9]$/.test(e.key) &&
+                    e.key !== "Backspace" &&
+                    e.key !== "Delete" &&
+                    e.key !== "ArrowLeft" &&
+                    e.key !== "ArrowRight" &&
+                    e.key !== "Tab"
+                  ) {
+                    setMobileError(true);
+                    e.preventDefault();
+                  }
+                }}
+                required
+              />
+              {mobileError && (
+                <p className="text-red-400 text-xs ml-2 mt-1">
+                  Only numbers are allowed
+                </p>
+              )}
+            </div>
 
-            <input
-              type="email"
-              placeholder="email address"
-              className="px-3 py-2 rounded-lg bg-slate-700 text-white placeholder-gray-400 focus:outline-none"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
+            <div className="flex flex-col w-full">
+              <input
+                type="email"
+                placeholder="Email address"
+                className={`px-3 py-2 rounded-lg bg-slate-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 border ${
+                  emailError
+                    ? "border-red-500"
+                    : "border-transparent hover:border-slate-600"
+                }`}
+                value={email}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setEmail(value);
+                  if (value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+                    setEmailError("Please enter a valid email address");
+                  } else {
+                    setEmailError("");
+                  }
+                }}
+              />
+              {emailError && (
+                <p className="text-red-400 text-xs ml-2 mt-1">{emailError}</p>
+              )}
+            </div>
             <div>
               {availableStops.length > 0 ? (
                 <>
                   <select
-                    className="w-full px-3 py-2 rounded-lg bg-slate-700 text-white placeholder-gray-400 focus:outline-none"
+                    className="w-full px-3 py-2 rounded-lg bg-slate-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 border border-transparent hover:border-slate-600"
                     value={boardingPoint}
                     onChange={(e) => {
                       setBoardingPoint(e.target.value);
@@ -551,7 +675,7 @@ const SeatBooking = () => {
                   <input
                     type="text"
                     placeholder="Select Boarding Point"
-                    className="w-full px-3 py-2 rounded-lg bg-slate-700 text-white placeholder-gray-400 focus:outline-none"
+                    className="w-full px-3 py-2 rounded-lg bg-slate-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 border border-transparent hover:border-slate-600"
                     value={boardingPoint}
                     onChange={(e) => setBoardingPoint(e.target.value)}
                     required
@@ -564,7 +688,7 @@ const SeatBooking = () => {
               {availableStops.length > 0 ? (
                 <>
                   <select
-                    className="w-full px-3 py-2 rounded-lg bg-slate-700 text-white placeholder-gray-400 focus:outline-none"
+                    className="w-full px-3 py-2 rounded-lg bg-slate-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 border border-transparent hover:border-slate-600"
                     value={dropoffPoint}
                     onChange={(e) => setDropoffPoint(e.target.value)}
                     required
@@ -602,7 +726,7 @@ const SeatBooking = () => {
                   <input
                     type="text"
                     placeholder="Select Dropoff Point"
-                    className="w-full px-3 py-2 rounded-lg bg-slate-700 text-white placeholder-gray-400 focus:outline-none"
+                    className="w-full px-3 py-2 rounded-lg bg-slate-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 border border-transparent hover:border-slate-600"
                     value={dropoffPoint}
                     onChange={(e) => setDropoffPoint(e.target.value)}
                     required
@@ -611,7 +735,7 @@ const SeatBooking = () => {
               )}
             </div>
             <select
-              className="px-3 py-2 rounded-lg bg-slate-700 text-white placeholder-gray-400 focus:outline-none"
+              className="px-3 py-2 rounded-lg bg-slate-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 border border-transparent hover:border-slate-600"
               value={gender}
               onChange={(e) => setGender(e.target.value)}
               required
@@ -627,7 +751,7 @@ const SeatBooking = () => {
                 disabled
                 type="date"
                 placeholder="Journey Date"
-                className="w-full px-3 py-2 rounded-lg bg-slate-700    text-white placeholder-white cursor-not-allowed focus:outline-none"
+                className="w-full px-3 py-2 rounded-lg bg-slate-700 text-white placeholder-white cursor-not-allowed focus:outline-none border border-transparent"
                 value={journeyDate}
                 onChange={(e) => setJourneyDate(e.target.value)}
                 required
@@ -638,8 +762,8 @@ const SeatBooking = () => {
             </div>
             <button
               type="submit"
-              disabled={isSubmitting || seats.length === 0}
-              className="bg-blue-600 py-2 rounded-lg font-semibold mt-3 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center"
+              disabled={isSubmitting || !isFormValid()}
+              className="bg-blue-600 py-2 rounded-lg font-semibold mt-3 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center w-full"
             >
               {isSubmitting ? (
                 <>
@@ -670,6 +794,9 @@ const SeatBooking = () => {
           </div> */}
           <div className="flex items-center gap-2">
             <span className="w-5 h-5 bg-green-600 rounded"></span> Available
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-5 h-5 bg-orange-600 rounded"></span> Pending
           </div>
           <div className="flex items-center gap-2">
             <span className="w-5 h-5 bg-red-800 rounded"></span> Already Booked

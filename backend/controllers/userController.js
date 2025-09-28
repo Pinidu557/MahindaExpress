@@ -15,6 +15,47 @@ export const register = async (req, res) => {
     return res.json({ success: false, message: "Missing Details" });
   }
 
+  // Validation for name fields - no numbers allowed
+  const nameRegex = /^[A-Za-z\s]+$/;
+  if (!nameRegex.test(firstname)) {
+    return res.json({
+      success: false,
+      message: "First name should contain only letters",
+    });
+  }
+
+  if (!nameRegex.test(lastname)) {
+    return res.json({
+      success: false,
+      message: "Last name should contain only letters",
+    });
+  }
+
+  // Email validation - must contain @ sign
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return res.json({
+      success: false,
+      message: "Please enter a valid email address",
+    });
+  }
+
+  // Password validation - minimum 8 characters and must include numbers
+  if (password.length < 8) {
+    return res.json({
+      success: false,
+      message: "Password must be at least 8 characters long",
+    });
+  }
+
+  const passwordHasNumber = /\d/.test(password);
+  if (!passwordHasNumber) {
+    return res.json({
+      success: false,
+      message: "Password must contain at least one number",
+    });
+  }
+
   try {
     const existingUser = await userModel.findOne({ email });
     if (existingUser) {
@@ -45,7 +86,7 @@ export const register = async (req, res) => {
 
     //sending welcome email
     const mailOptions = {
-      from: process.env.SENDER_EMAIL,
+      from: "piniduransika961@gmail.com",
       to: email,
       subject: "Welcome to Mahinda Express",
       text: `Welcome to Mahinda Express Website. Your account has been created with email id: ${email}`,
@@ -72,6 +113,15 @@ export const login = async (req, res) => {
     return res.json({
       success: false,
       message: "Email and Password are required",
+    });
+  }
+
+  // Email validation - must contain @ sign and be in proper format
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return res.json({
+      success: false,
+      message: "Please enter a valid email address",
     });
   }
 
@@ -182,9 +232,21 @@ export const sendVerifyOtp = async (req, res) => {
 export const verifyEmail = async (req, res) => {
   const userId = req.userId;
   const { otp } = req.body;
+
+  // Check if required fields are provided
   if (!userId || !otp) {
-    return res.json({ success: true, message: "Missing Details" });
+    return res.json({ success: false, message: "Missing Details" }); // Fixed success:true to success:false for error case
   }
+
+  // Validate OTP format - must be a 6-digit number
+  const otpRegex = /^[0-9]{6}$/;
+  if (!otpRegex.test(otp)) {
+    return res.json({
+      success: false,
+      message: "OTP must be a 6-digit number",
+    });
+  }
+
   try {
     const user = await userModel.findById(userId);
     if (!user) {
@@ -203,7 +265,7 @@ export const verifyEmail = async (req, res) => {
     await user.save();
     return res.json({ success: true, message: "Email Verified Successfully" });
   } catch (error) {
-    return res.json({ success: true, message: error.message });
+    return res.json({ success: false, message: error.message });
   }
 };
 
@@ -289,5 +351,88 @@ export const resetPassword = async (req, res) => {
     return res.json({ success: true, message: "Password Reset Successfully" });
   } catch (error) {
     return res.json({ success: false, message: error.message });
+  }
+};
+
+// Get all users (passengers) with pagination
+export const getAllUsers = async (req, res) => {
+  try {
+    // Parse pagination parameters
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    // Count total number of users
+    const totalUsers = await userModel.countDocuments();
+
+    // Find users with pagination and exclude sensitive information
+    const users = await userModel
+      .find(
+        {},
+        {
+          password: 0,
+          verifyOtp: 0,
+          resetOtp: 0,
+          verifyOtpExpireAt: 0,
+          resetOtpExpireAt: 0,
+        }
+      )
+      .sort({ createdAt: -1 }) // Sort by registration date, newest first
+      .skip(skip)
+      .limit(limit);
+
+    return res.json({
+      success: true,
+      users,
+      count: users.length,
+      totalUsers,
+      totalPages: Math.ceil(totalUsers / limit),
+      currentPage: page,
+    });
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch users",
+      error: error.message,
+    });
+  }
+};
+
+// Delete user by ID
+export const deleteUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        message: "User ID is required",
+      });
+    }
+
+    // Check if user exists
+    const user = await userModel.findById(id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // Delete the user
+    await userModel.findByIdAndDelete(id);
+
+    return res.json({
+      success: true,
+      message: "User deleted successfully",
+    });
+  } catch (error) {
+    console.error("Error deleting user:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to delete user",
+      error: error.message,
+    });
   }
 };

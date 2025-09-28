@@ -107,7 +107,7 @@ const Contactus = () => {
             <Phone className="w-6 h-6 text-white" />
             <div>
               <p className="font-semibold">Call Us</p>
-              <p className="text-gray-200">070 422 2777</p>
+              <p className="text-gray-200">076 374 1736</p>
             </div>
           </div>
 
@@ -126,7 +126,7 @@ const Contactus = () => {
             <div>
               <p className="font-semibold">Visit Us</p>
               <p className="text-gray-200">
-                No. 529 1/1, Galle Road, Colombo 06, Sri Lanka
+                No: 523/1, New Kandy Road, Biyagama
               </p>
             </div>
           </div>

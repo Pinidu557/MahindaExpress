@@ -1,10 +1,8 @@
-import Stripe from "stripe";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
 import Booking from "../models/bookings.js";
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY); // Add your secret key to .env
+import stripe from "../config/stripe.js"; // Import pre-configured Stripe instance
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
@@ -83,6 +81,35 @@ export const handleBankTransfer = async (req, res) => {
       });
     }
 
+    // Validate transaction reference (should not contain characters, only numbers)
+    const referenceRegex = /^[0-9]+$/;
+    if (!referenceRegex.test(transactionReference)) {
+      return res.status(400).json({
+        success: false,
+        message: "Transaction reference should contain only numbers",
+      });
+    }
+
+    // Validate payer name (should not contain numbers)
+    const nameRegex = /^[A-Za-z\s]+$/;
+    if (!nameRegex.test(payerName)) {
+      return res.status(400).json({
+        success: false,
+        message: "Payer name should contain only letters",
+      });
+    }
+
+    // Validate payment date (cannot be a future date)
+    const paymentDateObj = new Date(paymentDate);
+    const currentDate = new Date();
+
+    if (paymentDateObj > currentDate) {
+      return res.status(400).json({
+        success: false,
+        message: "Payment date cannot be in the future",
+      });
+    }
+
     // Find the booking
     const booking = await Booking.findById(bookingId);
     if (!booking) {
@@ -100,10 +127,13 @@ export const handleBankTransfer = async (req, res) => {
       payerName,
       paymentDate: new Date(paymentDate),
       totalAmount: parseFloat(totalAmount),
-      receiptPath: req.file.path,
+      // Ensure the path is formatted correctly for URL access
+      receiptPath: req.file.path.replace(/\\/g, "/"), // Convert Windows backslashes to forward slashes
       receiptFilename: req.file.filename,
       uploadedAt: new Date(),
     };
+
+    console.log("Receipt saved with path:", req.file.path);
 
     await booking.save();
 

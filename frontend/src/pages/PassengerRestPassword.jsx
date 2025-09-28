@@ -1,10 +1,11 @@
-import { assets } from "../assets/assets";
+import { assets } from "../assets/assets.js";
 import { useNavigate } from "react-router-dom";
 import { AppContent } from "../context/AppContext.jsx";
 import { useContext, useState } from "react";
 import React from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { Loader2 } from "lucide-react";
 
 const PassengerLogin = () => {
   const { backendUrl } = useContext(AppContent);
@@ -17,6 +18,7 @@ const PassengerLogin = () => {
   const [isEmailSent, setIsEmailSent] = useState(false);
   const [otp, setOtp] = useState(0);
   const [isOtpSubmited, setIsOtpSubmited] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const inputRefs = React.useRef([]);
   const handleInput = (e, index) => {
@@ -32,6 +34,7 @@ const PassengerLogin = () => {
 
   const onSubmitEmail = async (e) => {
     e.preventDefault();
+    setIsLoading(true);
     try {
       const { data } = await axios.post(
         backendUrl + "/api/auth/send-reset-otp",
@@ -41,18 +44,26 @@ const PassengerLogin = () => {
       data.success && setIsEmailSent(true);
     } catch (error) {
       toast.error(error.message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const onSubmitOtp = async (e) => {
     e.preventDefault();
-    const otpArray = inputRefs.current.map((e) => e.value);
-    setOtp(otpArray.join(""));
-    setIsOtpSubmited(true);
+    setIsLoading(true);
+    try {
+      const otpArray = inputRefs.current.map((e) => e.value);
+      setOtp(otpArray.join(""));
+      setIsOtpSubmited(true);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const onSubmitNewPassword = async (e) => {
     e.preventDefault();
+    setIsLoading(true);
     try {
       const { data } = await axios.post(
         backendUrl + "/api/auth/reset-password",
@@ -62,6 +73,8 @@ const PassengerLogin = () => {
       data.success && navigate("/login");
     } catch (error) {
       toast.error(error.message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -90,10 +103,10 @@ const PassengerLogin = () => {
               <p className="text-center mb-6 text-md">
                 Enter your registered email to reset your account
               </p>
-              <div className="mb-2 flex items-center gap-3 w-full px-3 py-3.5 rounded-full bg-[#333A5C]">
+              <div className="mb-2 flex items-center gap-3 w-full px-3 py-3.5 rounded-full bg-[#333A5C] focus-within:ring-2 focus-within:ring-indigo-500 transition-all duration-200">
                 <img src={assets.mail_icon} alt="" />
                 <input
-                  className="bg-transparent outline-none text-white w-full"
+                  className="bg-transparent outline-none text-white w-full focus:placeholder-indigo-300"
                   type="email"
                   placeholder="Email"
                   value={email}
@@ -101,8 +114,18 @@ const PassengerLogin = () => {
                   required
                 />
               </div>
-              <button className="w-full py-3 mt-5 rounded-full bg-gradient-to-r from-indigo-500 to-indigo-900 cursor-pointer text-white font-medium">
-                Submit
+              <button 
+                disabled={isLoading}
+                className="w-full py-3 mt-5 rounded-full bg-gradient-to-r from-indigo-500 to-indigo-900 hover:from-indigo-600 hover:to-indigo-800 cursor-pointer text-white font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="animate-spin h-5 w-5" />
+                    Sending Email
+                  </>
+                ) : (
+                  "Submit"
+                )}
               </button>
             </form>
           )}
@@ -131,8 +154,18 @@ const PassengerLogin = () => {
                     />
                   ))}
               </div>
-              <button className="w-full mt-3  py-2.5 rounded-full bg-gradient-to-r from-indigo-500 to-indigo-900 cursor-pointer text-white font-medium">
-                Submit
+              <button 
+                disabled={isLoading}
+                className="w-full mt-3 py-2.5 rounded-full bg-gradient-to-r from-indigo-500 to-indigo-900 hover:from-indigo-600 hover:to-indigo-800 cursor-pointer text-white font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="animate-spin h-5 w-5" />
+                    Verifying OTP
+                  </>
+                ) : (
+                  "Submit"
+                )}
               </button>
             </form>
           )}
@@ -145,10 +178,10 @@ const PassengerLogin = () => {
               <p className="text-center mb-6 text-md">
                 Enter the new password to reset your account
               </p>
-              <div className="mb-4 flex items-center gap-3 w-full px-3 py-3.5 rounded-full bg-[#333A5C]">
+              <div className="mb-4 flex items-center gap-3 w-full px-3 py-3.5 rounded-full bg-[#333A5C] focus-within:ring-2 focus-within:ring-indigo-500 transition-all duration-200">
                 <img src={assets.mail_icon} alt="" />
                 <input
-                  className="bg-transparent outline-none text-white w-full"
+                  className="bg-transparent outline-none text-white w-full focus:placeholder-indigo-300"
                   type="password"
                   placeholder="New Password"
                   value={newPassword}
@@ -156,10 +189,10 @@ const PassengerLogin = () => {
                   required
                 />
               </div>
-              <div className="mb-4 flex items-center gap-3 w-full px-3 py-3.5 rounded-full bg-[#333A5C]">
+              <div className="mb-4 flex items-center gap-3 w-full px-3 py-3.5 rounded-full bg-[#333A5C] focus-within:ring-2 focus-within:ring-indigo-500 transition-all duration-200">
                 <img src={assets.mail_icon} alt="" />
                 <input
-                  className="bg-transparent outline-none text-white w-full"
+                  className="bg-transparent outline-none text-white w-full focus:placeholder-indigo-300"
                   type="password"
                   placeholder="Confirm Password"
                   value={confirmPassword}
@@ -167,8 +200,18 @@ const PassengerLogin = () => {
                   required
                 />
               </div>
-              <button className="w-full py-3 mt-5 rounded-full bg-gradient-to-r from-indigo-500 to-indigo-900 cursor-pointer text-white font-medium">
-                Submit
+              <button 
+                disabled={isLoading}
+                className="w-full py-3 mt-5 rounded-full bg-gradient-to-r from-indigo-500 to-indigo-900 hover:from-indigo-600 hover:to-indigo-800 cursor-pointer text-white font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="animate-spin h-5 w-5" />
+                    Resetting Password
+                  </>
+                ) : (
+                  "Submit"
+                )}
               </button>
             </form>
           )}

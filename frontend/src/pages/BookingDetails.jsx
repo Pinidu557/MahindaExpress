@@ -227,9 +227,69 @@ const BookingDetails = () => {
         </button>
 
         <div className="bg-slate-800 rounded-xl p-6 shadow-lg">
-          <h1 className="text-2xl font-bold mb-6 pb-4 border-b border-slate-700">
-            Booking Details
-          </h1>
+          <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-700">
+            <h1 className="text-2xl font-bold">Booking Details</h1>
+            
+            {/* Booking Status Button */}
+            <button
+              onClick={() => {
+                if (booking?.status === "pending") {
+                  // For pending bookings, redirect to payment page
+                  navigate(`/journeys/checkout/payment?booking_id=${bookingId}`);
+                } else if (booking?.status === "cancelled") {
+                  // For cancelled bookings, show message or redirect to booking page
+                  alert("This booking has been cancelled. Please make a new booking.");
+                  navigate("/passengerDashboard");
+                } else {
+                  // For other statuses, redirect to payment success page
+                  navigate(`/journeys/checkout/payment/payment-success?booking_id=${bookingId}&payment_method=${booking?.paymentMethod || 'card'}`);
+                }
+              }}
+              className={`cursor-pointer px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 flex items-center gap-2 ${
+                booking?.status === "paid" 
+                  ? "bg-green-600 hover:bg-green-700 text-white" 
+                  : booking?.status === "pending_verification"
+                  ? "bg-yellow-600 hover:bg-yellow-700 text-white"  
+                  : booking?.status === "rejected"
+                  ? "bg-red-600 hover:bg-red-700 text-white"
+                  : booking?.status === "cancelled"
+                  ? "bg-gray-600 hover:bg-gray-700 text-white"
+                  : booking?.status === "pending"
+                  ? "bg-orange-600 hover:bg-orange-700 text-white"
+                  : "bg-blue-600 hover:bg-blue-700 text-white"
+              }`}
+            >
+              <div className={`w-2 h-2 rounded-full ${
+                booking?.status === "paid" 
+                  ? "bg-green-300" 
+                  : booking?.status === "pending_verification"
+                  ? "bg-yellow-300"
+                  : booking?.status === "rejected"
+                  ? "bg-red-300"
+                  : booking?.status === "cancelled"
+                  ? "bg-gray-300"
+                  : booking?.status === "pending"
+                  ? "bg-orange-300"
+                  : "bg-blue-300"
+              }`}></div>
+              <span>
+                {booking?.status === "paid" 
+                  ? "Payment Confirmed" 
+                  : booking?.status === "pending_verification"
+                  ? "Pending Verification"
+                  : booking?.status === "rejected"
+                  ? "Payment Rejected"
+                  : booking?.status === "cancelled"
+                  ? "Booking Cancelled"
+                  : booking?.status === "pending"
+                  ? "Complete Payment"
+                  : "View Status"}
+              </span>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
 
           {isLoading ? (
             <div className="py-20 flex justify-center">
@@ -339,13 +399,76 @@ const BookingDetails = () => {
                     <span className="text-slate-300 block">
                       Payment Method:
                     </span>
-                    <span className="font-medium">Credit/Debit Card</span>
+                    <span className="font-medium">
+                      {booking.paymentMethod === "bank_transfer"
+                        ? "Bank Transfer"
+                        : "Credit/Debit Card"}
+                    </span>
                   </div>
+                  {booking.status === "cancelled" &&
+                    booking.cancellationDetails && (
+                      <div className="mt-2 mb-2 col-span-2">
+                        <span className="text-slate-300 block mb-1">
+                          Cancellation Details:
+                        </span>
+                        <div className="  rounded-md">
+                          <p className="text-xs text-red-300 mb-1">
+                            Cancelled on{" "}
+                            {formatDate(
+                              booking.cancellationDetails.cancelledAt
+                            )}
+                          </p>
+                          <p className="text-xs text-slate-400">
+                            Reason:{" "}
+                            {booking.cancellationDetails.reason ||
+                              "Not specified"}
+                          </p>
+                          <p className="text-xs text-slate-400 mt-1">
+                            Refund Status:{" "}
+                            <span
+                              className={`${
+                                booking.cancellationDetails.refundStatus ===
+                                "processed"
+                                  ? "text-green-400"
+                                  : booking.cancellationDetails.refundStatus ===
+                                    "failed"
+                                  ? "text-red-400"
+                                  : "text-yellow-400"
+                              }`}
+                            >
+                              {booking.cancellationDetails.refundStatus
+                                ?.charAt(0)
+                                .toUpperCase() +
+                                booking.cancellationDetails.refundStatus?.slice(
+                                  1
+                                ) || "Pending"}
+                            </span>
+                          </p>
+                        </div>
+                      </div>
+                    )}
                   <div>
                     <span className="text-slate-300 block">
                       Payment Status:
                     </span>
-                    <span className="font-medium text-green-400">Paid</span>
+                    <span
+                      className={`font-medium ${
+                        booking.status === "paid"
+                          ? "text-green-400"
+                          : booking.status === "rejected" ||
+                            booking.status === "cancelled"
+                          ? "text-red-400"
+                          : "text-yellow-400"
+                      }`}
+                    >
+                      {booking.status === "paid"
+                        ? "Paid"
+                        : booking.status === "rejected"
+                        ? "Rejected"
+                        : booking.status === "cancelled"
+                        ? "Cancelled"
+                        : "Pending"}
+                    </span>
                   </div>
                   <div>
                     <span className="text-slate-300 block">Payment Date:</span>
@@ -357,23 +480,47 @@ const BookingDetails = () => {
               </div>
 
               <div className="flex justify-end">
-                <button
-                  onClick={downloadReceipt}
-                  disabled={isGenerating}
-                  className="cursor-pointer bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-lg flex items-center gap-2"
-                >
-                  {isGenerating ? (
-                    <>
-                      <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></div>
-                      <span>Generating...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Download size={18} />
-                      <span>Download E-Receipt</span>
-                    </>
-                  )}
-                </button>
+                {booking.status === "paid" ? (
+                  <button
+                    onClick={downloadReceipt}
+                    disabled={isGenerating}
+                    className="cursor-pointer bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-lg flex items-center gap-2"
+                  >
+                    {isGenerating ? (
+                      <>
+                        <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></div>
+                        <span>Generating...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Download size={18} />
+                        <span>Download E-Receipt</span>
+                      </>
+                    )}
+                  </button>
+                ) : (
+                  <div className="bg-slate-700 p-4 rounded-lg border border-slate-600 w-full max-w-[50%]">
+                    <div className="flex items-center gap-3 text-slate-300">
+                      <div className="w-8 h-8 bg-yellow-600 rounded-full flex items-center justify-center flex-shrink-0">
+                        <span className="text-yellow-200 text-sm">!</span>
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-medium text-yellow-300">
+                          E-Receipt Not Available
+                        </p>
+                        <p className="text-sm text-slate-400">
+                          E-receipt can only be downloaded for paid bookings.
+                          {booking.status === "pending" &&
+                            " Please complete your payment first."}
+                          {booking.status === "rejected" &&
+                            " This booking has been rejected."}
+                          {booking.status === "cancelled" &&
+                            " This booking has been cancelled."}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </>
           ) : (

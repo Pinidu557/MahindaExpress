@@ -1,9 +1,10 @@
 import { Link } from "react-router-dom";
+import { LogOut, User } from "lucide-react";
 
 const Dashboard = () => {
   return (
     <div className="bg-slate-900 min-h-screen">
-      <header className="p-6 border-b border-blue-800">
+      <header className="p-6 border-b border-blue-800 flex justify-between items-center">
         <h1 className="text-3xl font-bold text-white">Dashboard</h1>
       </header>
       <div className=" flex justify-center p-6">
@@ -37,14 +38,14 @@ const Dashboard = () => {
           </Link>
 
           <Link
-            to=""
+            to="/dashboardhirun"
             className="p-6 bg-orange-500 text-blue rounded-lg shadow hover:bg-orange-600 transition-colors "
           >
             Staff Management
           </Link>
 
           <Link
-            to=""
+            to="/maintenance"
             className="p-6 bg-yellow-500 text-yellow rounded-lg shadow hover:bg-yellow-600 transition-colors"
           >
             Maintenance

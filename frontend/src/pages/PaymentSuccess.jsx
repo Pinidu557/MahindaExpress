@@ -2,7 +2,14 @@ import React, { useEffect, useState, useContext } from "react";
 import PassengerNavbar from "../components/PassengerNavbar";
 import Footer from "../components/Footer";
 import { Link, useNavigate } from "react-router-dom";
-import { CircleCheckBig, Download, FileText } from "lucide-react";
+import {
+  CircleCheckBig,
+  Download,
+  FileText,
+  X,
+  Clock,
+  AlertCircle,
+} from "lucide-react";
 import Button from "../components/ui/Button";
 import { AppContent } from "../context/AppContext";
 import axios from "axios";
@@ -16,11 +23,26 @@ const PaymentSuccess = () => {
   const [bookingData, setBookingData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showRefundForm, setShowRefundForm] = useState(false);
+  const [refundDetails, setRefundDetails] = useState({
+    bankName: "",
+    accountNumber: "",
+    accountHolderName: "",
+    reason: "",
+  });
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Get booking ID and payment method from URL if present
   const urlParams = new URLSearchParams(window.location.search);
   const bookingId = urlParams.get("booking_id");
   const paymentMethod = urlParams.get("payment_method");
+
+  // Scroll to top when component mounts
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   useEffect(() => {
     const fetchBookingDetails = async () => {
@@ -46,7 +68,42 @@ const PaymentSuccess = () => {
     };
 
     fetchBookingDetails();
-  }, [bookingId, backendUrl]);
+
+    // Poll for status updates every 30 seconds if payment is pending verification
+    let intervalId;
+    if (bookingId && paymentMethod === "bank_transfer") {
+      intervalId = setInterval(async () => {
+        try {
+          const { data } = await axios.get(
+            `${backendUrl}/api/bookings/${bookingId}`
+          );
+          if (data.success && data.booking) {
+            const newStatus = data.booking.status;
+            const currentStatus = bookingData?.status;
+            
+            // Update booking data if status changed
+            if (newStatus !== currentStatus) {
+              setBookingData(data.booking);
+              
+              // Show success message if payment was approved
+              if (newStatus === "paid" && currentStatus === "pending_verification") {
+                toast.success("Payment approved! Your booking is now confirmed.");
+              }
+            }
+          }
+        } catch (error) {
+          console.error("Error polling booking status:", error);
+        }
+      }, 30000); // Poll every 30 seconds
+    }
+
+    // Cleanup interval on unmount
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [bookingId, backendUrl, paymentMethod, bookingData?.status]);
 
   const formatDate = (dateString) => {
     if (!dateString) return "";
@@ -56,6 +113,111 @@ const PaymentSuccess = () => {
       month: "short",
       day: "numeric",
     });
+  };
+
+  // Check if booking can be cancelled (within 1 hour)
+  const canCancelBooking = () => {
+    if (!bookingData || !bookingData.createdAt) return false;
+    const bookingTime = new Date(bookingData.createdAt);
+    const currentTime = new Date();
+    const timeDifference = currentTime - bookingTime;
+    const oneHour = 60 * 60 * 1000; // 1 hour in milliseconds
+    return timeDifference < oneHour;
+  };
+
+  // Handle cancel booking
+  const handleCancelBooking = () => {
+    if (!canCancelBooking()) {
+      toast.error("Booking can only be cancelled within 1 hour of booking");
+      return;
+    }
+    setShowCancelModal(true);
+  };
+
+  // Handle refund form submission
+  const handleRefundSubmit = async (e) => {
+    e.preventDefault();
+    setIsCancelling(true);
+
+    try {
+      console.log("Cancelling booking:", bookingId);
+      console.log("Refund details:", refundDetails);
+
+      const response = await axios.post(
+        `${backendUrl}/api/bookings/${bookingId}/cancel`,
+        {
+          refundDetails,
+          reason: refundDetails.reason,
+        },
+        {
+          withCredentials: true,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.data.success) {
+        toast.success(
+          "Booking cancelled successfully. Refund will be processed within 3-5 business days."
+        );
+        setShowCancelModal(false);
+        setShowRefundForm(false);
+
+        // Refresh booking data
+        const { data } = await axios.get(
+          `${backendUrl}/api/bookings/${bookingId}`
+        );
+        if (data.success) {
+          setBookingData(data.booking);
+        }
+      } else {
+        toast.error(response.data.message || "Failed to cancel booking");
+      }
+    } catch (error) {
+      console.error("Error cancelling booking:", error);
+      toast.error("Failed to cancel booking");
+    } finally {
+      setIsCancelling(false);
+    }
+  };
+
+  // Handle refund details change
+  const handleRefundChange = (e) => {
+    setRefundDetails({
+      ...refundDetails,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  // Manual refresh function
+  const handleRefreshStatus = async () => {
+    if (!bookingId) return;
+    
+    setIsRefreshing(true);
+    try {
+      const { data } = await axios.get(
+        `${backendUrl}/api/bookings/${bookingId}`
+      );
+      if (data.success) {
+        const oldStatus = bookingData?.status;
+        setBookingData(data.booking);
+        
+        // Show success message if status changed to paid
+        if (data.booking.status === "paid" && oldStatus === "pending_verification") {
+          toast.success("Payment approved! Your booking is now confirmed.");
+        } else if (data.booking.status === "rejected" && oldStatus === "pending_verification") {
+          toast.error("Payment was rejected. Please contact support.");
+        } else if (data.booking.status === "pending_verification") {
+          toast.info("Payment is still under verification. Please wait for admin approval.");
+        }
+      }
+    } catch (error) {
+      console.error("Error refreshing booking status:", error);
+      toast.error("Failed to refresh booking status");
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   // Fallback text-based receipt download
@@ -269,17 +431,34 @@ Please present this ticket when boarding the bus
 
       <div className="container mx-auto py-10 px-4 mt-20">
         <div className="bg-slate-800 p-8 rounded-xl shadow-lg my-10 flex flex-col items-center max-w-3xl mx-auto">
-          <CircleCheckBig className="text-green-500 mb-4" size={55} />
-          <h1 className="text-3xl font-bold text-white mb-4">
-            {paymentMethod === "bank_transfer"
-              ? "Payment Receipt Uploaded!"
-              : "Payment Successful!"}
-          </h1>
-          <p className="text-lg mb-6 text-center">
-            {paymentMethod === "bank_transfer"
-              ? "Thank you for uploading your payment receipt. We will verify your payment within 24 hours and send you a confirmation email."
-              : "Thank you for your booking. Your payment has been processed successfully."}
-          </p>
+          {bookingData && bookingData.status === "cancelled" ? (
+            <>
+              <div className="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center mb-4">
+                <X size={32} className="text-white" />
+              </div>
+              <h1 className="text-3xl font-bold text-white mb-4">
+                Booking Cancelled
+              </h1>
+              <p className="text-lg mb-6 text-center text-slate-300">
+                Your booking has been successfully cancelled. Refund will be
+                processed within 3-5 business days to your bank account.
+              </p>
+            </>
+          ) : (
+            <>
+              <CircleCheckBig className="text-green-500 mb-4" size={55} />
+              <h1 className="text-3xl font-bold text-white mb-4">
+                {paymentMethod === "bank_transfer"
+                  ? "Payment Receipt Uploaded!"
+                  : "Payment Successful!"}
+              </h1>
+              <p className="text-lg mb-6 text-center">
+                {paymentMethod === "bank_transfer"
+                  ? "Thank you for uploading your payment receipt. We will verify your payment within 24 hours and after you can download E-Receipt."
+                  : "Thank you for your booking. Your payment has been processed successfully."}
+              </p>
+            </>
+          )}
 
           {isLoading ? (
             <p>Loading booking details...</p>
@@ -432,33 +611,110 @@ Please present this ticket when boarding the bus
                     {bookingData.totalFare}
                   </p>
                   {paymentMethod === "bank_transfer" && (
-                    <p>
-                      <span className="text-gray-400">Payment Status:</span>{" "}
-                      <span className="text-yellow-400">
-                        Pending Verification
-                      </span>
-                    </p>
+                    <div className="flex items-center justify-between">
+                      <p>
+                        <span className="text-gray-400">Payment Status:</span>{" "}
+                        {bookingData.status === "cancelled" ? (
+                          <span className="text-red-400 font-medium">
+                            Cancelled - Refund Pending
+                          </span>
+                        ) : bookingData.status === "paid" ? (
+                          <span className="text-green-400 font-medium">
+                            Approved - Payment Confirmed
+                          </span>
+                        ) : bookingData.status === "rejected" ? (
+                          <span className="text-red-400 font-medium">
+                            Rejected - Contact Support
+                          </span>
+                        ) : (
+                          <span className="text-yellow-400">
+                            Pending Verification
+                          </span>
+                        )}
+                      </p>
+                      {bookingData.status === "pending_verification" && (
+                        <button
+                          onClick={handleRefreshStatus}
+                          disabled={isRefreshing}
+                          className="ml-4 px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white text-sm rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                        >
+                          {isRefreshing ? (
+                            <>
+                              <div className="animate-spin h-3 w-3 border border-white border-t-transparent rounded-full"></div>
+                              Checking...
+                            </>
+                          ) : (
+                            <>
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                              </svg>
+                              Refresh
+                            </>
+                          )}
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>
 
-              <button
-                onClick={downloadReceipt}
-                className="flex items-center justify-center gap-2 bg-green-600 cursor-pointer  text-white py-3 px-6 rounded-lg font-semibold my-4 transition-all"
-                disabled={isGenerating}
-              >
-                {isGenerating ? (
-                  <>
-                    <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full mr-2"></div>
-                    Generating Receipt...
-                  </>
-                ) : (
-                  <>
-                    <Download size={18} />
-                    Download E-Receipt
-                  </>
-                )}
-              </button>
+              {bookingData.status === "paid" ? (
+                <button
+                  onClick={downloadReceipt}
+                  className="flex items-center justify-center gap-2 bg-green-600 cursor-pointer  text-white py-3 px-6 rounded-lg font-semibold my-4 transition-all"
+                  disabled={isGenerating}
+                >
+                  {isGenerating ? (
+                    <>
+                      <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full mr-2"></div>
+                      Generating Receipt...
+                    </>
+                  ) : (
+                    <>
+                      <Download size={18} />
+                      Download E-Receipt
+                    </>
+                  )}
+                </button>
+              ) : (
+                <div className="bg-slate-700 p-4 rounded-lg border border-slate-600 w-full max-w-md my-4">
+                  <div className="flex items-center gap-3 text-slate-300">
+                    {bookingData.status === "cancelled" ? (
+                      <div className="w-8 h-8 bg-red-600 rounded-full flex items-center justify-center flex-shrink-0">
+                        <X size={16} className="text-red-200" />
+                      </div>
+                    ) : (
+                      <div className="w-8 h-8 bg-yellow-600 rounded-full flex items-center justify-center flex-shrink-0">
+                        <span className="text-yellow-200 text-sm">!</span>
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <p
+                        className={`font-medium ${
+                          bookingData.status === "cancelled"
+                            ? "text-red-500"
+                            : "text-yellow-300"
+                        }`}
+                      >
+                        {bookingData.status === "cancelled"
+                          ? "E-Receipt Not Available - Booking Cancelled"
+                          : "E-Receipt Not Available"}
+                      </p>
+                      <p className="text-sm text-slate-400">
+                        {bookingData.status === "cancelled"
+                          ? "E-receipt is not available because this booking has been cancelled. Refund will be processed to your bank account."
+                          : `E-receipt will be available when your payment is approved, please check booking history. ${
+                              bookingData.status === "pending" &&
+                              " Please complete your payment first."
+                            }${
+                              bookingData.status === "rejected" &&
+                              " This booking has been rejected."
+                            }`}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </>
           ) : (
             <p className="text-yellow-400">
@@ -467,19 +723,206 @@ Please present this ticket when boarding the bus
             </p>
           )}
 
-          <div className="flex gap-4 mt-6">
+          <div className="flex gap-4 mt-6 justify-center items-center">
             <Button
               className="cursor-pointer bg-indigo-600 hover:bg-indigo-700"
               onClick={() => navigate("/journeys")}
             >
               Book Another Journey
             </Button>
+
             <Button className="cursor-pointer " onClick={() => navigate("/")}>
               Go to Home
             </Button>
+
+            {bookingData &&
+              canCancelBooking() &&
+              bookingData.status !== "cancelled" && (
+                <Button
+                  className="cursor-pointer bg-red-800 hover:bg-red-700 text-red-500 hover:text-white font-medium px-6 py-1 rounded-lg transition-all duration-200 border-2 border-red-900 hover:border-red-600"
+                  onClick={handleCancelBooking}
+                >
+                  Cancel Booking
+                </Button>
+              )}
           </div>
         </div>
       </div>
+
+      {/* Cancel Booking Modal */}
+      {showCancelModal && (
+        <div className="fixed inset-0 bg-slate-900 bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-800 rounded-lg max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-semibold text-white">
+                Cancel Booking
+              </h3>
+              <button
+                onClick={() => setShowCancelModal(false)}
+                className="text-gray-400 hover:text-white"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <div className="mb-6">
+              <div className="flex items-center gap-3 mb-4 text-yellow-400">
+                <Clock size={20} />
+                <span className="font-medium">Cancellation Policy</span>
+              </div>
+              <p className="text-slate-300 text-sm mb-4">
+                You can cancel your booking within 1 hour of booking. A refund
+                will be processed to your bank account.
+              </p>
+
+              <div className="bg-slate-700 p-4 rounded-lg">
+                <h4 className="font-medium text-white mb-2">Booking Details</h4>
+                <p className="text-slate-300 text-sm">
+                  Route: {bookingData?.boardingPoint} to{" "}
+                  {bookingData?.dropoffPoint}
+                </p>
+                <p className="text-slate-300 text-sm">
+                  Date: {formatDate(bookingData?.journeyDate)}
+                </p>
+                <p className="text-slate-300 text-sm">
+                  Amount: LKR {bookingData?.totalFare}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <Button
+                className="cursor-pointer bg-red-600 hover:bg-red-700"
+                onClick={() => setShowRefundForm(true)}
+              >
+                Proceed with Cancellation
+              </Button>
+              <Button
+                className="cursor-pointer bg-gray-600 hover:bg-gray-700"
+                onClick={() => setShowCancelModal(false)}
+              >
+                Keep Booking
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Refund Details Form Modal */}
+      {showRefundForm && (
+        <div className="fixed inset-0 bg-slate-900 bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-800 rounded-lg max-w-lg w-full p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-semibold text-white">
+                Refund Details
+              </h3>
+              <button
+                onClick={() => setShowRefundForm(false)}
+                className="text-gray-400 hover:text-white"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <form onSubmit={handleRefundSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Bank Name *
+                </label>
+                <input
+                  type="text"
+                  name="bankName"
+                  value={refundDetails.bankName}
+                  onChange={handleRefundChange}
+                  required
+                  className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-indigo-500"
+                  placeholder="e.g., Commercial Bank, People's Bank"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Account Number *
+                </label>
+                <input
+                  type="text"
+                  name="accountNumber"
+                  value={refundDetails.accountNumber}
+                  onChange={handleRefundChange}
+                  required
+                  className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-indigo-500"
+                  placeholder="Enter your account number"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Account Holder Name *
+                </label>
+                <input
+                  type="text"
+                  name="accountHolderName"
+                  value={refundDetails.accountHolderName}
+                  onChange={handleRefundChange}
+                  required
+                  className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-indigo-500"
+                  placeholder="Enter account holder name"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Cancellation Reason *
+                </label>
+                <textarea
+                  name="reason"
+                  value={refundDetails.reason}
+                  onChange={handleRefundChange}
+                  required
+                  rows={3}
+                  className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-indigo-500"
+                  placeholder="Please provide a reason for cancellation"
+                />
+              </div>
+
+              <div className="bg-yellow-900 border border-yellow-600 rounded-lg p-3">
+                <div className="flex items-center gap-2 text-yellow-300 mb-2">
+                  <AlertCircle size={16} />
+                  <span className="font-medium">Important</span>
+                </div>
+                <p className="text-yellow-200 text-sm">
+                  Refund will be processed within 3-5 business days. Please
+                  ensure your bank details are correct.
+                </p>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <Button
+                  type="submit"
+                  disabled={isCancelling}
+                  className="cursor-pointer bg-red-600 hover:bg-red-700 disabled:opacity-50"
+                >
+                  {isCancelling ? (
+                    <>
+                      <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2"></div>
+                      Cancelling...
+                    </>
+                  ) : (
+                    "Confirm Cancellation"
+                  )}
+                </Button>
+                <Button
+                  type="button"
+                  className="cursor-pointer bg-gray-600 hover:bg-gray-700"
+                  onClick={() => setShowRefundForm(false)}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       <Footer />
     </div>

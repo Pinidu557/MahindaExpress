@@ -61,20 +61,18 @@ const PassengerAboutus = () => {
                 <h2 className="text-4xl text-white mb-3 font-medium">
                   Who We Are
                 </h2>
-                Founded in 2005 by Mr. Nikitha Grero, NCG Express has emerged as
-                a leading people mobility company in Sri Lanka, initially
-                starting with a single bus on the Colombo – Passara route. Over
-                the years, the company has evolved into a trailblazer within the
-                travel industry, now boasting a comprehensive fleet that
-                includes Super luxury coaches, luxury coaches, and non-AC
-                passenger buses. Under Mr. Grero’s visionary leadership, NCG
-                Express is committed to delivering top-notch Public Bus
-                Services, setting new standards for reliability and innovation
-                in the transportation sector. From its humble beginnings, the
-                company has transformed into a symbol of excellence,
-                consistently prioritizing customer satisfaction and providing a
-                diverse range of high-quality mobility solutions to the people
-                of Sri Lanka.
+                Mahinda Express has grown into a trusted name in Sri Lanka’s
+                passenger transport sector, beginning its journey with a single
+                bus serving the Colombo – Anuradhapura route. Over the years,
+                the company has expanded steadily, now operating a modern fleet
+                comprising Super Luxury coaches, Luxury coaches, and Standard
+                passenger buses. Guided by Mr. Mahinda’s dedication to quality
+                and innovation, Mahinda Express remains committed to offering
+                safe, reliable, and comfortable travel experiences. From modest
+                origins, the company has become a hallmark of service
+                excellence, continuously focusing on customer satisfaction and
+                delivering diverse, high-standard mobility solutions across Sri
+                Lanka.
               </p>
             </div>
           </div>

@@ -5,6 +5,11 @@ import {
   updateBooking,
   getBookingById,
   getUserBookings,
+  getAllBookings,
+  cancelBooking,
+  updateRefundStatus,
+  autoCancelPendingBookings,
+  triggerAutoCancellation,
 } from "../controllers/bookingController.js";
 import userAuth from "../middleware/userAuth.js";
 
@@ -14,6 +19,12 @@ const bookingRouter = express.Router();
 // Add the new route for getting booked seats
 bookingRouter.get("/booked-seats", getBookedSeats);
 
+// Add route for getting all bookings (for admin)
+bookingRouter.get("/all", getAllBookings); // Access via /api/bookings/all
+
+// Add route for auto-cancellation (admin only)
+bookingRouter.post("/auto-cancel", triggerAutoCancellation); // Access via /api/bookings/auto-cancel
+
 // Add route for getting user bookings with authentication - must come BEFORE /:bookingId
 bookingRouter.get("/user", userAuth, getUserBookings); // Access via /api/bookings/user
 bookingRouter.get("/user/:userId", userAuth, getUserBookings); // Access via /api/bookings/user/:userId
@@ -22,5 +33,7 @@ bookingRouter.get("/user/:userId", userAuth, getUserBookings); // Access via /ap
 bookingRouter.post("/checkout", createBooking);
 bookingRouter.put("/:bookingId", updateBooking);
 bookingRouter.get("/:bookingId", getBookingById);
+bookingRouter.post("/:bookingId/cancel", userAuth, cancelBooking);
+bookingRouter.put("/:bookingId/refund", userAuth, updateRefundStatus);
 
 export default bookingRouter;

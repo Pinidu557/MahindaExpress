@@ -442,7 +442,7 @@ const PassengerBankTransfer = () => {
                     <button
                       type="submit"
                       disabled={isSubmitting || !paymentReceipt}
-                      className="w-full bg-gradient-to-r from-indigo-500 to-indigo-700 py-3 rounded-lg font-semibold text-white flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="cursor-pointer w-full bg-gradient-to-r from-indigo-500 to-indigo-700 py-3 rounded-lg font-semibold text-white flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isSubmitting ? (
                         <>

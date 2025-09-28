@@ -17,6 +17,12 @@ import { toast } from "react-toastify";
 const PassengerJourney = () => {
   // Removed authentication-related states
 
+  // Function to get today's date in YYYY-MM-DD format for min attribute
+  const getTodayFormatted = () => {
+    const today = new Date();
+    return today.toISOString().split("T")[0]; // Format: YYYY-MM-DD
+  };
+
   // Define route-specific time schedules
   const routeSchedules = {
     "Colombo-Ampara": [
@@ -340,6 +346,7 @@ const PassengerJourney = () => {
             <input
               type="date"
               value={date}
+              min={getTodayFormatted()}
               onChange={(e) => {
                 setDate(e.target.value);
                 if (errors.date) setErrors({ ...errors, date: "" });
@@ -518,7 +525,7 @@ const PassengerJourney = () => {
                             )
                           }
                           className={`flex items-center justify-center gap-1 px-8 py-3 rounded-lg whitespace-nowrap text-md
-                            bg-indigo-600 cursor-pointer font-semibold`}
+                            bg-indigo-600 cursor-pointer font-semibold hover:bg-indigo-700`}
                         >
                           {isTimePassed ? (
                             <>

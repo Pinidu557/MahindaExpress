@@ -23,6 +23,20 @@ const PassengerDashboard = () => {
     email: "",
   });
 
+  // Validation state for form fields
+  const [validationErrors, setValidationErrors] = useState({
+    firstname: "",
+    lastname: "",
+  });
+
+  // Validation function for name fields - only letters and spaces allowed
+  const validateName = (name, value) => {
+    if (!/^[A-Za-z\s]*$/.test(value)) {
+      return "Only letters are allowed";
+    }
+    return "";
+  };
+
   // Load user data and booking history on component mount
   useEffect(() => {
     // Set initial profile data
@@ -99,15 +113,55 @@ const PassengerDashboard = () => {
   // Handle input change for profile form
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setUserProfile((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+
+    // Only update the state if the field is not a name field, or if it passes validation
+    if (name === "firstname" || name === "lastname") {
+      // For name fields, only allow letters and spaces
+      if (/^[A-Za-z\s]*$/.test(value)) {
+        setUserProfile((prev) => ({
+          ...prev,
+          [name]: value,
+        }));
+        // Clear validation error if it exists
+        if (validationErrors[name]) {
+          setValidationErrors((prev) => ({
+            ...prev,
+            [name]: "",
+          }));
+        }
+      } else {
+        // If validation fails, set error message but don't update the field
+        setValidationErrors((prev) => ({
+          ...prev,
+          [name]: "Only letters and spaces are allowed",
+        }));
+      }
+    } else {
+      // For non-name fields, update normally
+      setUserProfile((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
   };
 
   // Handle profile update form submission
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
+
+    // Check for validation errors before submission
+    const firstnameError = validateName("firstname", userProfile.firstname);
+    const lastnameError = validateName("lastname", userProfile.lastname);
+
+    if (firstnameError || lastnameError) {
+      setValidationErrors({
+        firstname: firstnameError,
+        lastname: lastnameError,
+      });
+      toast.error("Please fix the validation errors before submitting");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -239,9 +293,18 @@ const PassengerDashboard = () => {
                             name="firstname"
                             value={userProfile.firstname}
                             onChange={handleInputChange}
-                            className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                            className={`w-full px-3 py-2 bg-slate-700 border ${
+                              validationErrors.firstname
+                                ? "border-red-500"
+                                : "border-slate-600"
+                            } rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500`}
                             required
                           />
+                          {validationErrors.firstname && (
+                            <p className="text-red-500 text-xs mt-1">
+                              {validationErrors.firstname}
+                            </p>
+                          )}
                         </div>
 
                         <div>
@@ -253,9 +316,18 @@ const PassengerDashboard = () => {
                             name="lastname"
                             value={userProfile.lastname}
                             onChange={handleInputChange}
-                            className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                            className={`w-full px-3 py-2 bg-slate-700 border ${
+                              validationErrors.lastname
+                                ? "border-red-500"
+                                : "border-slate-600"
+                            } rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500`}
                             required
                           />
+                          {validationErrors.lastname && (
+                            <p className="text-red-500 text-xs mt-1">
+                              {validationErrors.lastname}
+                            </p>
+                          )}
                         </div>
                       </div>
 
@@ -423,11 +495,11 @@ const PassengerDashboard = () => {
                                       : booking.status === "confirmed"
                                       ? "bg-blue-900 text-blue-300"
                                       : booking.status === "pending"
-                                      ? "bg-orange-600 text-white"
+                                      ? "bg-orange-700 text-white"
                                       : booking.status === "rejected"
                                       ? "bg-gradient-to-r from-red-600 to-red-700 text-white"
                                       : booking.status === "cancelled"
-                                      ? "bg-red-900 text-red-300"
+                                      ? "bg-red-800 text-white"
                                       : "bg-yellow-900 text-yellow-300"
                                   }`}
                                 >

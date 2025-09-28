@@ -1,5 +1,7 @@
 import Booking from "../models/bookings.js";
 import User from "../models/userModel.js";
+import fs from "fs";
+import path from "path";
 
 // Get all bank transfers for admin review
 export const getBankTransfers = async (req, res) => {
@@ -10,6 +12,25 @@ export const getBankTransfers = async (req, res) => {
     })
       .populate("routeId", "startLocation endLocation")
       .sort({ createdAt: -1 });
+
+    // Log receipt paths for debugging
+    for (const transfer of bankTransfers) {
+      if (
+        transfer.bankTransferDetails &&
+        transfer.bankTransferDetails.receiptPath
+      ) {
+        console.log(
+          `Receipt path for booking ${transfer._id}: ${transfer.bankTransferDetails.receiptPath}`
+        );
+        // Check if file exists
+        const filePath = path.join(
+          process.cwd(),
+          transfer.bankTransferDetails.receiptPath
+        );
+        const fileExists = fs.existsSync(filePath);
+        console.log(`  File exists: ${fileExists}`);
+      }
+    }
 
     res.json({
       success: true,
