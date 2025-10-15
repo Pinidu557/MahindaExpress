@@ -32,6 +32,7 @@ const PaymentSuccess = () => {
     reason: "",
   });
   const [isCancelling, setIsCancelling] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Get booking ID and payment method from URL if present
   const urlParams = new URLSearchParams(window.location.search);
@@ -67,7 +68,42 @@ const PaymentSuccess = () => {
     };
 
     fetchBookingDetails();
-  }, [bookingId, backendUrl]);
+
+    // Poll for status updates every 30 seconds if payment is pending verification
+    let intervalId;
+    if (bookingId && paymentMethod === "bank_transfer") {
+      intervalId = setInterval(async () => {
+        try {
+          const { data } = await axios.get(
+            `${backendUrl}/api/bookings/${bookingId}`
+          );
+          if (data.success && data.booking) {
+            const newStatus = data.booking.status;
+            const currentStatus = bookingData?.status;
+            
+            // Update booking data if status changed
+            if (newStatus !== currentStatus) {
+              setBookingData(data.booking);
+              
+              // Show success message if payment was approved
+              if (newStatus === "paid" && currentStatus === "pending_verification") {
+                toast.success("Payment approved! Your booking is now confirmed.");
+              }
+            }
+          }
+        } catch (error) {
+          console.error("Error polling booking status:", error);
+        }
+      }, 30000); // Poll every 30 seconds
+    }
+
+    // Cleanup interval on unmount
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [bookingId, backendUrl, paymentMethod, bookingData?.status]);
 
   const formatDate = (dateString) => {
     if (!dateString) return "";
@@ -152,6 +188,36 @@ const PaymentSuccess = () => {
       ...refundDetails,
       [e.target.name]: e.target.value,
     });
+  };
+
+  // Manual refresh function
+  const handleRefreshStatus = async () => {
+    if (!bookingId) return;
+    
+    setIsRefreshing(true);
+    try {
+      const { data } = await axios.get(
+        `${backendUrl}/api/bookings/${bookingId}`
+      );
+      if (data.success) {
+        const oldStatus = bookingData?.status;
+        setBookingData(data.booking);
+        
+        // Show success message if status changed to paid
+        if (data.booking.status === "paid" && oldStatus === "pending_verification") {
+          toast.success("Payment approved! Your booking is now confirmed.");
+        } else if (data.booking.status === "rejected" && oldStatus === "pending_verification") {
+          toast.error("Payment was rejected. Please contact support.");
+        } else if (data.booking.status === "pending_verification") {
+          toast.info("Payment is still under verification. Please wait for admin approval.");
+        }
+      }
+    } catch (error) {
+      console.error("Error refreshing booking status:", error);
+      toast.error("Failed to refresh booking status");
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   // Fallback text-based receipt download
@@ -388,7 +454,7 @@ Please present this ticket when boarding the bus
               </h1>
               <p className="text-lg mb-6 text-center">
                 {paymentMethod === "bank_transfer"
-                  ? "Thank you for uploading your payment receipt. We will verify your payment within 24 hours and send you a confirmation email."
+                  ? "Thank you for uploading your payment receipt. We will verify your payment within 24 hours and after you can download E-Receipt."
                   : "Thank you for your booking. Your payment has been processed successfully."}
               </p>
             </>
@@ -545,18 +611,49 @@ Please present this ticket when boarding the bus
                     {bookingData.totalFare}
                   </p>
                   {paymentMethod === "bank_transfer" && (
-                    <p>
-                      <span className="text-gray-400">Payment Status:</span>{" "}
-                      {bookingData.status === "cancelled" ? (
-                        <span className="text-red-400 font-medium">
-                          Cancelled - Refund Pending
-                        </span>
-                      ) : (
-                        <span className="text-yellow-400">
-                          Pending Verification
-                        </span>
+                    <div className="flex items-center justify-between">
+                      <p>
+                        <span className="text-gray-400">Payment Status:</span>{" "}
+                        {bookingData.status === "cancelled" ? (
+                          <span className="text-red-400 font-medium">
+                            Cancelled - Refund Pending
+                          </span>
+                        ) : bookingData.status === "paid" ? (
+                          <span className="text-green-400 font-medium">
+                            Approved - Payment Confirmed
+                          </span>
+                        ) : bookingData.status === "rejected" ? (
+                          <span className="text-red-400 font-medium">
+                            Rejected - Contact Support
+                          </span>
+                        ) : (
+                          <span className="text-yellow-400">
+                            Pending Verification
+                          </span>
+                        )}
+                      </p>
+                      {bookingData.status === "pending_verification" && (
+                        <button
+                          onClick={handleRefreshStatus}
+                          disabled={isRefreshing}
+                          className="ml-4 px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white text-sm rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                        >
+                          {isRefreshing ? (
+                            <>
+                              <div className="animate-spin h-3 w-3 border border-white border-t-transparent rounded-full"></div>
+                              Checking...
+                            </>
+                          ) : (
+                            <>
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                              </svg>
+                              Refresh
+                            </>
+                          )}
+                        </button>
                       )}
-                    </p>
+                    </div>
                   )}
                 </div>
               </div>

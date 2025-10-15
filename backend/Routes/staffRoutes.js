@@ -13,12 +13,19 @@ import {
   generateReport,
 } from "../controllers/staffController.js";
 
+import { getStaffForAdvance } from "../controllers/staffController.js";
+import { getSalaryUpdatePrepData } from '../controllers/salaryController.js';
+
 const router = express.Router();
 
 // GET routes
 router.get("/", getAllStaff);
 router.get("/report/all", generateReport);
 router.get("/:id", getStaffById);
+
+// GET /api/staff/names-and-salaries
+router.get('/names-and-salaries', getStaffForAdvance);
+router.get('/update-prep/:id', getSalaryUpdatePrepData)
 
 // POST routes
 router.post("/", createStaff);

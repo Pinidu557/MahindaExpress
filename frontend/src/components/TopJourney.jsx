@@ -46,16 +46,16 @@ export const JourneySection = () => {
           <div className="p-6 flex flex-col justify-between h-full">
             <div>
               <h3 className="text-lg font-bold text-white mb-2">
-                Colombo → Badulla: Highland Gateway
+                Colombo → Anuradhapura: Heritage
               </h3>
               <p className="text-gray-100 text-sm">
-                Ride from the city’s edge to the heart of the hill country.
-                Scenic journey to Badulla — perfect for seasonal retreats and
-                cool mountain air.
+                Ride from the city’s edge to the island’s sacred ancient
+                capital. A cultural journey to Anuradhapura perfect for
+                spiritual retreats and exploring timeless history.
               </p>
             </div>
             <img
-              src={assets.badulla_journey}
+              src={assets.anu}
               alt="Moratuwa → Jaffna"
               className="object-cover w-full h-50 rounded-2xl mt-2"
             />

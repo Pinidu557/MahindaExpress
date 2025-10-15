@@ -86,6 +86,200 @@ export default function CreateStaffForm({ onCreated }) {
     }
   }
 
+  // Clear name error when user starts typing valid characters
+  const handleNameInput = (e) => {
+    const value = e.target.value;
+    setForm((f) => ({ ...f, name: value }));
+    
+    // Clear error if user is typing valid characters
+    if (errors.name && /^[a-zA-Z\s'-]*$/.test(value)) {
+      setErrors((prev) => ({ ...prev, name: "" }));
+    }
+  };
+
+  // Clear email error when user starts typing valid characters
+  const handleEmailInput = (e) => {
+    const value = e.target.value;
+    setForm((f) => ({ ...f, email: value }));
+    
+    // Clear error if user is typing valid email characters
+    if (errors.email && /^[a-zA-Z0-9._%+-@]*$/.test(value)) {
+      setErrors((prev) => ({ ...prev, email: "" }));
+    }
+  };
+
+  // Clear phone error when user starts typing valid characters
+  const handlePhoneInput = (e) => {
+    const value = e.target.value;
+    setForm((f) => ({ ...f, phone: value }));
+    
+    // Clear error if user is typing valid phone characters
+    if (errors.phone && /^[0-9\s\-()+]*$/.test(value)) {
+      setErrors((prev) => ({ ...prev, phone: "" }));
+    }
+  };
+
+  // Clear assigned bus error when user starts typing valid characters
+  const handleAssignedBusInput = (e) => {
+    const value = e.target.value;
+    setForm((f) => ({ ...f, assignedBus: value }));
+    
+    // Clear error if user is typing valid characters
+    if (errors.assignedBus && /^[a-zA-Z0-9\s-]*$/.test(value)) {
+      setErrors((prev) => ({ ...prev, assignedBus: "" }));
+    }
+  };
+
+  // Prevent invalid characters from being typed in name field
+  const handleNameKeyDown = (e) => {
+    // Allow: letters, spaces, hyphens, apostrophes, backspace, delete, arrow keys, tab
+    const allowedKeys = [
+      'Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',
+      'Tab', 'Home', 'End', 'Enter'
+    ];
+    
+    // Check if it's an allowed special key
+    if (allowedKeys.includes(e.key)) {
+      return; // Allow these keys
+    }
+    
+    // Check if it's a letter (a-z, A-Z)
+    if (/^[a-zA-Z]$/.test(e.key)) {
+      return; // Allow letters
+    }
+    
+    // Check if it's space, hyphen, or apostrophe
+    if (e.key === ' ' || e.key === '-' || e.key === "'") {
+      return; // Allow these characters
+    }
+    
+    // Block everything else and show error message
+    e.preventDefault();
+    
+    // Show specific error messages based on what was typed
+    if (/^[0-9]$/.test(e.key)) {
+      setErrors((prev) => ({ ...prev, name: "Numbers are not allowed in name field" }));
+    } else if (/[!@#$%^&*()_+={}[\]|\\:";'<>?,./~`]/.test(e.key)) {
+      setErrors((prev) => ({ ...prev, name: "Special characters are not allowed in name field" }));
+    } else {
+      setErrors((prev) => ({ ...prev, name: "Only letters, spaces, hyphens, and apostrophes are allowed" }));
+    }
+    
+    // Clear error after 3 seconds
+    setTimeout(() => {
+      setErrors((prev) => ({ ...prev, name: "" }));
+    }, 3000);
+  };
+
+  // Prevent invalid characters from being typed in email field
+  const handleEmailKeyDown = (e) => {
+    // Allow: letters, numbers, @, ., _, %, +, -, backspace, delete, arrow keys, tab
+    const allowedKeys = [
+      'Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',
+      'Tab', 'Home', 'End', 'Enter'
+    ];
+    
+    // Check if it's an allowed special key
+    if (allowedKeys.includes(e.key)) {
+      return; // Allow these keys
+    }
+    
+    // Check if it's a letter (a-z, A-Z)
+    if (/^[a-zA-Z]$/.test(e.key)) {
+      return; // Allow letters
+    }
+    
+    // Check if it's a number (0-9)
+    if (/^[0-9]$/.test(e.key)) {
+      return; // Allow numbers
+    }
+    
+    // Check if it's an allowed special character for email
+    if (e.key === '@' || e.key === '.' || e.key === '_' || e.key === '%' || e.key === '+' || e.key === '-') {
+      return; // Allow these characters
+    }
+    
+    // Block everything else and show error message
+    e.preventDefault();
+    setErrors((prev) => ({ ...prev, email: "Only letters, numbers, @, ., _, %, +, and - are allowed in email" }));
+    
+    // Clear error after 3 seconds
+    setTimeout(() => {
+      setErrors((prev) => ({ ...prev, email: "" }));
+    }, 3000);
+  };
+
+  // Prevent invalid characters from being typed in phone field
+  const handlePhoneKeyDown = (e) => {
+    // Allow: numbers, +, (, ), -, spaces, backspace, delete, arrow keys, tab
+    const allowedKeys = [
+      'Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',
+      'Tab', 'Home', 'End', 'Enter'
+    ];
+    
+    // Check if it's an allowed special key
+    if (allowedKeys.includes(e.key)) {
+      return; // Allow these keys
+    }
+    
+    // Check if it's a number (0-9)
+    if (/^[0-9]$/.test(e.key)) {
+      return; // Allow numbers
+    }
+    
+    // Check if it's an allowed special character for phone
+    if (e.key === '+' || e.key === '(' || e.key === ')' || e.key === '-' || e.key === ' ') {
+      return; // Allow these characters
+    }
+    
+    // Block everything else and show error message
+    e.preventDefault();
+    setErrors((prev) => ({ ...prev, phone: "Only numbers, +, (, ), -, and spaces are allowed in phone number" }));
+    
+    // Clear error after 3 seconds
+    setTimeout(() => {
+      setErrors((prev) => ({ ...prev, phone: "" }));
+    }, 3000);
+  };
+
+  // Prevent invalid characters from being typed in assigned bus field
+  const handleAssignedBusKeyDown = (e) => {
+    // Allow: letters, numbers, spaces, hyphens, backspace, delete, arrow keys, tab
+    const allowedKeys = [
+      'Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',
+      'Tab', 'Home', 'End', 'Enter'
+    ];
+    
+    // Check if it's an allowed special key
+    if (allowedKeys.includes(e.key)) {
+      return; // Allow these keys
+    }
+    
+    // Check if it's a letter (a-z, A-Z)
+    if (/^[a-zA-Z]$/.test(e.key)) {
+      return; // Allow letters
+    }
+    
+    // Check if it's a number (0-9)
+    if (/^[0-9]$/.test(e.key)) {
+      return; // Allow numbers
+    }
+    
+    // Check if it's space or hyphen
+    if (e.key === ' ' || e.key === '-') {
+      return; // Allow these characters
+    }
+    
+    // Block everything else and show error message
+    e.preventDefault();
+    setErrors((prev) => ({ ...prev, assignedBus: "Only letters, numbers, spaces, and hyphens are allowed in bus identifier" }));
+    
+    // Clear error after 3 seconds
+    setTimeout(() => {
+      setErrors((prev) => ({ ...prev, assignedBus: "" }));
+    }, 3000);
+  };
+
   const validateForm = () => {
     const newErrors = {};
     if (!form.name.trim()) {
@@ -215,7 +409,8 @@ export default function CreateStaffForm({ onCreated }) {
               type="text"
               placeholder="Enter full name"
               value={form.name}
-              onChange={(e) => update("name", e.target.value)}
+              onChange={handleNameInput}
+              onKeyDown={handleNameKeyDown}
               className={`bg-slate-700 border border-slate-600 text-slate-200 placeholder-slate-400 rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                 errors.name ? "border-red-500" : ""
               }`}
@@ -253,7 +448,8 @@ export default function CreateStaffForm({ onCreated }) {
               type="email"
               placeholder="Enter email address"
               value={form.email}
-              onChange={(e) => update("email", e.target.value)}
+              onChange={handleEmailInput}
+              onKeyDown={handleEmailKeyDown}
               className={`bg-slate-700 border border-slate-600 text-slate-200 placeholder-slate-400 rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                 errors.email ? "border-red-500" : ""
               }`}
@@ -271,7 +467,8 @@ export default function CreateStaffForm({ onCreated }) {
               type="tel"
               placeholder="e.g., +1234567890 or 1234567890"
               value={form.phone}
-              onChange={(e) => update("phone", e.target.value)}
+              onChange={handlePhoneInput}
+              onKeyDown={handlePhoneKeyDown}
               className={`bg-slate-700 border border-slate-600 text-slate-200 placeholder-slate-400 rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                 errors.phone ? "border-red-500" : ""
               }`}
@@ -290,9 +487,15 @@ export default function CreateStaffForm({ onCreated }) {
             type="text"
             placeholder="Enter bus number or identifier"
             value={form.assignedBus}
-            onChange={(e) => update("assignedBus", e.target.value)}
-            className="bg-slate-700 border border-slate-600 text-slate-200 placeholder-slate-400 rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+            onChange={handleAssignedBusInput}
+            onKeyDown={handleAssignedBusKeyDown}
+            className={`bg-slate-700 border border-slate-600 text-slate-200 placeholder-slate-400 rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+              errors.assignedBus ? "border-red-500" : ""
+            }`}
           />
+          {errors.assignedBus && (
+            <p className="text-red-400 text-sm mt-1">{errors.assignedBus}</p>
+          )}
         </div>
 
         <div className="flex items-center justify-between pt-4">

@@ -1,9 +1,10 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import { assets } from "../assets/assets.js";
 import { useNavigate, useLocation } from "react-router-dom";
 import { AppContent } from "../context/AppContext.jsx";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { Loader2 } from "lucide-react";
 
 const PassengerLogin = () => {
   const navigate = useNavigate();
@@ -15,10 +16,39 @@ const PassengerLogin = () => {
   const [lastname, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Check if all form fields are valid
+  const isFormValid = () => {
+    if (state === "Sign Up") {
+      return (
+        firstname.trim() !== "" &&
+        lastname.trim() !== "" &&
+        email.trim() !== "" &&
+        password.trim() !== "" &&
+        /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+      ); // Basic email validation
+    } else {
+      return (
+        email.trim() !== "" &&
+        password.trim() !== "" &&
+        /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+      ); // Basic email validation
+    }
+  };
+
+  // Reset fields when switching between login and signup
+  useEffect(() => {
+    setFirstName("");
+    setLastName("");
+    setEmail("");
+    setPassword("");
+  }, [state]);
 
   const onSubmitHandler = async (e) => {
     try {
       e.preventDefault();
+      setIsLoading(true);
       axios.defaults.withCredentials = true;
       if (state === "Sign Up") {
         const { data } = await axios.post(backendUrl + "/api/auth/register", {
@@ -58,6 +88,8 @@ const PassengerLogin = () => {
       toast.error(
         error.response?.data?.message || error.message || "An error occurred"
       );
+    } finally {
+      setIsLoading(false);
     }
   };
   return (
@@ -85,12 +117,33 @@ const PassengerLogin = () => {
           </p>
           <form onSubmit={onSubmitHandler}>
             {state === "Sign Up" && (
-              <div className="mb-4 flex items-center gap-3 w-full px-3 py-2.5 rounded-full bg-[#333A5C]">
+              <div className="mb-4 flex items-center gap-3 w-full px-3 py-2.5 rounded-full bg-[#333A5C] focus-within:ring-2 focus-within:ring-indigo-500 transition-all duration-200">
                 <img src={assets.person_icon} alt="" />
                 <input
-                  onChange={(e) => setFirstName(e.target.value)}
+                  onChange={(e) => {
+                    // Allow only letters (no numbers or special characters)
+                    if (
+                      /^[A-Za-z\s]*$/.test(e.target.value) ||
+                      e.target.value === ""
+                    ) {
+                      setFirstName(e.target.value);
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    // Block keys that are numbers or special characters
+                    if (
+                      !/^[A-Za-z\s]$/.test(e.key) &&
+                      e.key !== "Backspace" &&
+                      e.key !== "Delete" &&
+                      e.key !== "ArrowLeft" &&
+                      e.key !== "ArrowRight" &&
+                      e.key !== "Tab"
+                    ) {
+                      e.preventDefault();
+                    }
+                  }}
                   value={firstname}
-                  className="bg-transparent outline-none text-white w-full"
+                  className="bg-transparent outline-none text-white w-full focus:placeholder-indigo-300"
                   type="text"
                   placeholder="First Name"
                   required
@@ -98,35 +151,56 @@ const PassengerLogin = () => {
               </div>
             )}
             {state == "Sign Up" && (
-              <div className="mb-4 flex items-center gap-3 w-full px-3 py-2.5 rounded-full bg-[#333A5C]">
+              <div className="mb-4 flex items-center gap-3 w-full px-3 py-2.5 rounded-full bg-[#333A5C] focus-within:ring-2 focus-within:ring-indigo-500 transition-all duration-200">
                 <img src={assets.person_icon} alt="" />
                 <input
-                  onChange={(e) => setLastName(e.target.value)}
+                  onChange={(e) => {
+                    // Allow only letters (no numbers or special characters)
+                    if (
+                      /^[A-Za-z\s]*$/.test(e.target.value) ||
+                      e.target.value === ""
+                    ) {
+                      setLastName(e.target.value);
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    // Block keys that are numbers or special characters
+                    if (
+                      !/^[A-Za-z\s]$/.test(e.key) &&
+                      e.key !== "Backspace" &&
+                      e.key !== "Delete" &&
+                      e.key !== "ArrowLeft" &&
+                      e.key !== "ArrowRight" &&
+                      e.key !== "Tab"
+                    ) {
+                      e.preventDefault();
+                    }
+                  }}
                   value={lastname}
-                  className="bg-transparent outline-none text-white w-full"
+                  className="bg-transparent outline-none text-white w-full focus:placeholder-indigo-300"
                   type="text"
                   placeholder="Last Name"
                   required
                 />
               </div>
             )}
-            <div className="mb-4 flex items-center gap-3 w-full px-3 py-2.5 rounded-full bg-[#333A5C]">
+            <div className="mb-4 flex items-center gap-3 w-full px-3 py-2.5 rounded-full bg-[#333A5C] focus-within:ring-2 focus-within:ring-indigo-500 transition-all duration-200">
               <img src={assets.mail_icon} alt="" />
               <input
                 onChange={(e) => setEmail(e.target.value)}
                 value={email}
-                className="bg-transparent outline-none text-white w-full"
+                className="bg-transparent outline-none text-white w-full focus:placeholder-indigo-300"
                 type="email"
                 placeholder="Email"
                 required
               />
             </div>
-            <div className="mb-4 flex items-center gap-3 w-full px-3 py-2.5 rounded-full bg-[#333A5C]">
+            <div className="mb-4 flex items-center gap-3 w-full px-3 py-2.5 rounded-full bg-[#333A5C] focus-within:ring-2 focus-within:ring-indigo-500 transition-all duration-200">
               <img src={assets.lock_icon} alt="" />
               <input
                 onChange={(e) => setPassword(e.target.value)}
                 value={password}
-                className="bg-transparent outline-none text-white w-full"
+                className="bg-transparent outline-none text-white w-full focus:placeholder-indigo-300"
                 type="password"
                 placeholder="Password"
                 required
@@ -138,8 +212,22 @@ const PassengerLogin = () => {
             >
               Forget Password
             </p>
-            <button className="w-full py-2.5 rounded-full bg-gradient-to-r from-indigo-500 to-indigo-900 cursor-pointer text-white font-medium">
-              {state === "Sign Up" ? "Register" : "Login"}
+            <button
+              disabled={isLoading || !isFormValid()}
+              className={`w-full py-2.5 rounded-full bg-gradient-to-r from-indigo-500 to-indigo-900 hover:from-indigo-600 hover:to-indigo-800 text-white font-medium transition-all duration-200 flex items-center justify-center gap-2 ${
+                isFormValid() ? "cursor-pointer" : "cursor-not-allowed"
+              }`}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="animate-spin h-5 w-5" />
+                  {state === "Sign Up" ? "Creating Account" : "Logging in"}
+                </>
+              ) : state === "Sign Up" ? (
+                "Register"
+              ) : (
+                "Login"
+              )}
             </button>
           </form>
           {state === "Sign Up" ? (

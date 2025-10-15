@@ -3,6 +3,9 @@ import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import { AppContent } from "../context/AppContext";
 import api from "../lib/api"; // Import the API client
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import { Phone } from "lucide-react";
 import {
   Users,
   CheckCircle,
@@ -39,9 +42,15 @@ const UserManagement = () => {
   const [bookingStatusFilter, setBookingStatusFilter] = useState("all");
   const [dateFilter, setDateFilter] = useState("all");
   const [customDate, setCustomDate] = useState("");
+  const [routeNameFilter, setRouteNameFilter] = useState("all");
   const [deletingUserId, setDeletingUserId] = useState(null);
   const [refunds, setRefunds] = useState([]);
   const [refundStatusFilter, setRefundStatusFilter] = useState("all");
+  const [processingTransfer, setProcessingTransfer] = useState(null);
+  const [processingRefund, setProcessingRefund] = useState(null);
+  const [generatingRefundReport, setGeneratingRefundReport] = useState(false);
+  const [contactMessages, setContactMessages] = useState([]);
+  const [contactStatusFilter, setContactStatusFilter] = useState("all");
 
   // Function to handle custom date change with validation
   const handleCustomDateChange = (e) => {
@@ -61,6 +70,8 @@ const UserManagement = () => {
   const [showUserModal, setShowUserModal] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [currentBookingPage, setCurrentBookingPage] = useState(1);
+  const [bookingsPerPage] = useState(10);
 
   const fetchBankTransfers = useCallback(async () => {
     setIsLoading(true);
@@ -77,34 +88,41 @@ const UserManagement = () => {
     }
   }, []);
 
-  const fetchBookings = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      // Using the all bookings endpoint for admin view
-      console.log("Calling API endpoint: /api/bookings/all");
-      const { data } = await api.get("/api/bookings/all");
-      console.log("API Response:", data);
-      console.log("Fetched bookings:", data.bookings?.length, "bookings");
-      console.log(
-        "Booking statuses:",
-        data.bookings?.map((b) => b.status)
-      );
-      console.log("All booking data:", data.bookings);
-      if (data.success) {
-        setBookings(data.bookings || []);
-      } else {
-        toast.error(data.message || "Failed to fetch bookings");
+  const fetchBookings = useCallback(
+    async (page = 1) => {
+      setIsLoading(true);
+      try {
+        // Using the all bookings endpoint for admin view
+        console.log("Calling API endpoint: /api/bookings/all");
+        const { data } = await api.get("/api/bookings/all");
+        console.log("API Response:", data);
+        console.log("Fetched bookings:", data.bookings?.length, "bookings");
+        console.log(
+          "Booking statuses:",
+          data.bookings?.map((b) => b.status)
+        );
+        console.log("All booking data:", data.bookings);
+        if (data.success) {
+          const allBookings = data.bookings || [];
+          setBookings(allBookings);
+
+          // Just set the current page directly without additional calculations
+          setCurrentBookingPage(page);
+        } else {
+          toast.error(data.message || "Failed to fetch bookings");
+        }
+      } catch (error) {
+        console.error("Error fetching bookings:", error);
+        toast.error(
+          "Failed to load bookings: " +
+            (error.response?.data?.message || error.message)
+        );
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      console.error("Error fetching bookings:", error);
-      toast.error(
-        "Failed to load bookings: " +
-          (error.response?.data?.message || error.message)
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+    },
+    [] // No dependencies needed
+  );
 
   const fetchRefunds = useCallback(async () => {
     setIsLoading(true);
@@ -114,7 +132,12 @@ const UserManagement = () => {
       if (data.success) {
         const cancelledBookings = data.bookings.filter(
           (booking) =>
-            booking.status === "cancelled" && booking.cancellationDetails
+            booking.status === "cancelled" &&
+            booking.cancellationDetails &&
+            // Exclude auto-cancelled pending payments (timeout cancellations)
+            !booking.cancellationDetails.reason?.includes(
+              "Auto-cancelled due to payment timeout"
+            )
         );
         setRefunds(cancelledBookings);
       } else {
@@ -152,6 +175,22 @@ const UserManagement = () => {
     }
   }, []);
 
+  // Fetch contact messages data
+  const fetchContactMessages = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const response = await api.get("/api/contacts");
+      if (response.data.success) {
+        setContactMessages(response.data.contacts || []);
+      }
+    } catch (error) {
+      console.error("Error fetching contact messages:", error);
+      toast.error("Failed to fetch contact messages");
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   // Fetch data based on active tab
   useEffect(() => {
     if (activeTab === "bank-transfers") {
@@ -159,37 +198,92 @@ const UserManagement = () => {
     } else if (activeTab === "users") {
       fetchUsers();
     } else if (activeTab === "bookings") {
-      fetchBookings();
+      fetchBookings(currentBookingPage);
     } else if (activeTab === "refunds") {
       fetchRefunds();
+    } else if (activeTab === "contact-messages") {
+      fetchContactMessages();
     }
-  }, [activeTab, fetchBankTransfers, fetchUsers, fetchBookings, fetchRefunds]);
+  }, [
+    activeTab,
+    fetchBankTransfers,
+    fetchUsers,
+    fetchBookings,
+    fetchRefunds,
+    fetchContactMessages,
+    currentBookingPage,
+  ]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    if (activeTab === "bookings") {
+      setCurrentBookingPage(1);
+    }
+  }, [
+    searchTerm,
+    bookingStatusFilter,
+    dateFilter,
+    customDate,
+    routeNameFilter,
+    activeTab,
+  ]);
 
   const handleApproveTransfer = async (bookingId) => {
+    // Show confirmation dialog
+    const confirmMessage = `Are you sure you want to approve this bank transfer?`;
+
+    if (!confirm(confirmMessage)) {
+      return;
+    }
+
+    setProcessingTransfer(bookingId);
     try {
       const { data } = await api.put(
         `/api/admin/approve-bank-transfer/${bookingId}`
       );
       if (data.success) {
-        toast.success("Bank transfer approved successfully!");
+        toast.success(`Bank transfer approved successfully!`, {
+          duration: 5000,
+          position: "top-right",
+        });
         fetchBankTransfers(); // Refresh the list
       } else {
         toast.error(data.message || "Failed to approve transfer");
       }
     } catch (error) {
       console.error("Error approving transfer:", error);
-      toast.error("Failed to approve bank transfer");
+      toast.error(" Failed to approve bank transfer. Please try again.");
+    } finally {
+      setProcessingTransfer(null);
     }
   };
 
   const handleRejectTransfer = async (bookingId, reason = "") => {
+    // Show confirmation dialog
+    const transfer = bankTransfers.find((t) => t._id === bookingId);
+    const confirmMessage = `Are you sure you want to reject this bank transfer?\n\nTransfer Details:\n• Amount: LKR ${
+      transfer?.totalFare || "N/A"
+    }\n• Payer: ${
+      transfer?.bankTransferDetails?.payerName || "N/A"
+    }\n• Reference: ${
+      transfer?.bankTransferDetails?.transactionReference || "N/A"
+    }`;
+
+    if (!confirm(confirmMessage)) {
+      return;
+    }
+
+    setProcessingTransfer(bookingId);
     try {
       const { data } = await api.put(
         `/api/admin/reject-bank-transfer/${bookingId}`,
-        { reason }
+        { reason: reason }
       );
       if (data.success) {
-        toast.success("Bank transfer rejected");
+        toast.error(` Bank transfer rejected`, {
+          duration: 5000,
+          position: "top-right",
+        });
         fetchBankTransfers(); // Refresh the list
       } else {
         toast.error(data.message || "Failed to reject transfer");
@@ -200,7 +294,9 @@ const UserManagement = () => {
         error.response?.data?.message ||
         error.message ||
         "Failed to reject bank transfer";
-      toast.error(errorMessage);
+      toast.error(` ${errorMessage}`);
+    } finally {
+      setProcessingTransfer(null);
     }
   };
 
@@ -211,6 +307,20 @@ const UserManagement = () => {
 
   // Handle refund processing
   const handleProcessRefund = async (bookingId, status) => {
+    // Show confirmation dialog
+    const refund = refunds.find((r) => r._id === bookingId);
+    const statusText = status === "processed" ? "approve" : "reject";
+    const confirmMessage = `Are you sure you want to ${statusText} this refund?\n\nRefund Details:\n• Amount: LKR ${
+      refund?.totalFare || "N/A"
+    }\n• Customer: ${refund?.passengerName || "N/A"}\n• Email: ${
+      refund?.email || "N/A"
+    }\n• Reason: ${refund?.cancellationDetails?.reason || "N/A"}`;
+
+    if (!confirm(confirmMessage)) {
+      return;
+    }
+
+    setProcessingRefund(bookingId);
     try {
       const { data } = await api.put(`/api/bookings/${bookingId}/refund`, {
         refundStatus: status,
@@ -219,14 +329,24 @@ const UserManagement = () => {
       });
 
       if (data.success) {
-        toast.success(`Refund marked as ${status}`);
+        const successMessage =
+          status === "processed"
+            ? `Refund approved successfully!\nAmount: LKR ${refund?.totalFare}\nCustomer: ${refund?.passengerName}`
+            : ` Refund rejected\nAmount: LKR ${refund?.totalFare}\nCustomer: ${refund?.passengerName}`;
+
+        toast[status === "processed" ? "success" : "error"](successMessage, {
+          duration: 5000,
+          position: "top-right",
+        });
         fetchRefunds(); // Refresh the list
       } else {
         toast.error(data.message || "Failed to update refund status");
       }
     } catch (error) {
       console.error("Error processing refund:", error);
-      toast.error("Failed to process refund");
+      toast.error(`Failed to process refund. Please try again.`);
+    } finally {
+      setProcessingRefund(null);
     }
   };
 
@@ -282,17 +402,543 @@ Status: ${refund.cancellationDetails?.refundStatus}
     }
   };
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    if (!dateString) return "N/A";
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return "N/A";
+      return date.toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch (error) {
+      return "N/A", error;
+    }
   };
 
   const formatCurrency = (amount) => {
     return `LKR ${amount?.toLocaleString() || 0}`;
+  };
+
+  // Generate Refunds Report
+  const generateRefundsReport = async () => {
+    setGeneratingRefundReport(true);
+    try {
+      // Check if refunds data is available
+      if (!refunds || refunds.length === 0) {
+        toast.error("No refunds data available to generate report");
+        return;
+      }
+
+      const doc = new jsPDF();
+
+      // Title with better styling
+      doc.setFontSize(20);
+      doc.setTextColor(75, 85, 99); // slate-600
+      doc.text("Refunds Report", 14, 22);
+
+      // Date
+      doc.setFontSize(10);
+      doc.setTextColor(100, 100, 100); // gray
+      doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 30);
+
+      // Filter refunds based on current filter
+      const filteredRefunds = refunds.filter((refund) => {
+        if (refundStatusFilter === "all") return true;
+        return (
+          refund.cancellationDetails?.refundStatus ===
+          refundStatusFilter
+        );
+      });
+
+      // Prepare table columns
+      const tableColumns = [
+        "Booking ID",
+        "Customer Name",
+        "Route",
+        "Journey Date",
+        "Amount (LKR)",
+        "Refund Status",
+        "Bank Name",
+        "Account Number",
+        "Reason"
+      ];
+
+      // Prepare table rows
+      const tableRows = filteredRefunds.map((refund) => [
+        String(refund._id).substring(0, 8) + "...", // Truncated booking ID
+        refund.passengerName || "N/A",
+        `${refund.boardingPoint} → ${refund.dropoffPoint}`,
+        formatDate(refund.journeyDate),
+        refund.totalFare || 0,
+        refund.cancellationDetails?.refundStatus || "pending",
+        refund.cancellationDetails?.refundDetails?.bankName || "N/A",
+        refund.cancellationDetails?.refundDetails?.accountNumber || "N/A",
+        refund.cancellationDetails?.reason || "N/A"
+      ]);
+
+      // Add summary statistics
+      const totalRefunds = filteredRefunds.length;
+      const pendingRefunds = filteredRefunds.filter(r => 
+        r.cancellationDetails?.refundStatus === "pending"
+      ).length;
+      const processedRefunds = filteredRefunds.filter(r => 
+        r.cancellationDetails?.refundStatus === "processed"
+      ).length;
+      const failedRefunds = filteredRefunds.filter(r => 
+        r.cancellationDetails?.refundStatus === "failed"
+      ).length;
+      const totalAmount = filteredRefunds.reduce((sum, refund) => 
+        sum + (refund.totalFare || 0), 0
+      );
+
+      // Add summary section with better styling
+      doc.setFontSize(14);
+      doc.setTextColor(75, 85, 99); // slate-600
+      doc.text("Summary Statistics", 14, 45);
+      
+      doc.setFontSize(11);
+      doc.setTextColor(0, 0, 0); // black
+      doc.text(`Total Refunds: ${totalRefunds}`, 14, 55);
+      doc.text(`Pending: ${pendingRefunds}`, 14, 63);
+      doc.text(`Processed: ${processedRefunds}`, 14, 71);
+      doc.text(`Failed: ${failedRefunds}`, 14, 79);
+      doc.text(`Total Amount: LKR ${totalAmount.toLocaleString()}`, 14, 87);
+
+      // Add table with better styling
+      autoTable(doc, {
+        head: [tableColumns],
+        body: tableRows,
+        startY: 95,
+        styles: {
+          overflow: "linebreak",
+          cellWidth: "wrap",
+          fontSize: 9,
+          textColor: [0, 0, 0],
+        },
+        columnStyles: {
+          0: { cellWidth: 20 }, // Booking ID
+          1: { cellWidth: 25 }, // Customer Name
+          2: { cellWidth: 30 }, // Route
+          3: { cellWidth: 20 }, // Journey Date
+          4: { cellWidth: 15 }, // Amount
+          5: { cellWidth: 15 }, // Status
+          6: { cellWidth: 20 }, // Bank Name
+          7: { cellWidth: 25 }, // Account Number
+          8: { cellWidth: 30 }, // Reason
+        },
+        headStyles: {
+          fillColor: [75, 85, 99], // slate-600
+          textColor: 255,
+          fontStyle: 'bold',
+          fontSize: 10,
+        },
+        alternateRowStyles: {
+          fillColor: [248, 250, 252] // slate-50
+        },
+        margin: { top: 10, right: 10, bottom: 10, left: 10 }
+      });
+
+      // Add footer
+      const pageCount = doc.internal.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(100, 100, 100);
+        doc.text(
+          `Page ${i} of ${pageCount} - Generated on ${new Date().toLocaleDateString()}`,
+          14,
+          doc.internal.pageSize.height - 10
+        );
+      }
+
+      // Save the PDF
+      const fileName = `refunds_report_${new Date().toISOString().split('T')[0]}.pdf`;
+      doc.save(fileName);
+
+      toast.success("Refunds report generated successfully!");
+    } catch (error) {
+      console.error("Error generating refunds report:", error);
+      toast.error("Failed to generate refunds report");
+    } finally {
+      setGeneratingRefundReport(false);
+    }
+  };
+
+  // Generate Users Report
+  const generateUsersReport = () => {
+    try {
+      // Check if users data is available
+      if (!users || users.length === 0) {
+        toast.error("No users data available to generate report");
+        return;
+      }
+
+      const doc = new jsPDF();
+
+      // Title
+      doc.setFontSize(20);
+      doc.text("Users Report", 14, 22);
+
+      // Date
+      doc.setFontSize(10);
+      doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 30);
+
+      // Filter info
+      let filterInfo = "All Users";
+      if (userStatusFilter !== "all") {
+        filterInfo = `Filtered by: ${userStatusFilter}`;
+      }
+      doc.text(filterInfo, 14, 38);
+
+      // Prepare data
+      const filteredUsers = users.filter((user) => {
+        const matchesSearch =
+          searchTerm === "" ||
+          user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          user.email?.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesStatus =
+          userStatusFilter === "all" || user.status === userStatusFilter;
+        return matchesSearch && matchesStatus;
+      });
+
+      // Debug: Log first user to see data structure
+      if (filteredUsers.length > 0) {
+        console.log("First user data structure:", filteredUsers[0]);
+      }
+
+      const tableData = filteredUsers.map((user, index) => [
+        index + 1,
+        user.name || user.fullName || user.firstName || "N/A",
+        user.email || "N/A",
+        user.phone || user.phoneNumber || "N/A",
+        user.status ||
+          user.verificationStatus ||
+          (user.isVerified ? "verified" : "unverified") ||
+          "N/A",
+        formatDate(user.createdAt),
+      ]);
+
+      // Check if we have data to display
+      if (tableData.length === 0) {
+        doc.setFontSize(12);
+        doc.text("No users found matching the current filters.", 14, 50);
+      } else {
+        // Table
+        autoTable(doc, {
+          head: [["#", "Name", "Email", "Phone", "Status", "Created At"]],
+          body: tableData,
+          startY: 45,
+          styles: { fontSize: 8 },
+          headStyles: { fillColor: [59, 130, 246] },
+          alternateRowStyles: { fillColor: [248, 250, 252] },
+        });
+      }
+
+      // Summary
+      const totalUsers = filteredUsers.length;
+
+      doc.setFontSize(12);
+      doc.text("Summary:", 14, doc.lastAutoTable?.finalY + 20 || 100);
+      doc.setFontSize(10);
+      doc.text(
+        `Total Users: ${totalUsers}`,
+        14,
+        doc.lastAutoTable?.finalY + 30 || 110
+      );
+
+      // Save
+      doc.save(`users-report-${new Date().toISOString().split("T")[0]}.pdf`);
+      toast.success("Users report generated successfully!");
+    } catch (error) {
+      console.error("Error generating users report:", error);
+      toast.error("Failed to generate users report");
+    }
+  };
+
+  // Generate Bookings Report
+  const generateBookingsReport = () => {
+    try {
+      // Check if bookings data is available
+      if (!bookings || bookings.length === 0) {
+        toast.error("No bookings data available to generate report");
+        return;
+      }
+
+      const doc = new jsPDF();
+
+      // Title
+      doc.setFontSize(20);
+      doc.text("Detailed User Bookings Report", 14, 22);
+
+      // Date
+      doc.setFontSize(10);
+      doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 30);
+
+      // Filter info
+      let filterInfo = "All Bookings";
+      if (bookingStatusFilter !== "all") {
+        filterInfo = `Filtered by: ${bookingStatusFilter}`;
+      }
+      if (dateFilter !== "all") {
+        if (dateFilter === "today") {
+          filterInfo += ` | Date: Today (${new Date().toLocaleDateString()})`;
+        } else if (dateFilter === "yesterday") {
+          const yesterday = new Date();
+          yesterday.setDate(yesterday.getDate() - 1);
+          filterInfo += ` | Date: Yesterday (${yesterday.toLocaleDateString()})`;
+        } else if (dateFilter === "custom" && customDate) {
+          const customDateObj = new Date(customDate);
+          filterInfo += ` | Date: ${customDateObj.toLocaleDateString()}`;
+        } else {
+          filterInfo += ` | Date: ${dateFilter}`;
+        }
+      }
+      // Add route filter information
+      if (routeNameFilter !== "all") {
+        filterInfo += ` | Route: ${routeNameFilter}`;
+      }
+      doc.text(filterInfo, 14, 38);
+
+      // Prepare data
+      const filteredBookings = bookings.filter((booking) => {
+        const matchesSearch =
+          searchTerm === "" ||
+          booking.passengerName
+            ?.toLowerCase()
+            .includes(searchTerm.toLowerCase()) ||
+          booking._id?.toString().includes(searchTerm) ||
+          booking.boardingPoint
+            ?.toLowerCase()
+            .includes(searchTerm.toLowerCase()) ||
+          booking.dropoffPoint
+            ?.toLowerCase()
+            .includes(searchTerm.toLowerCase());
+
+        const matchesStatus =
+          bookingStatusFilter === "all" ||
+          booking.status === bookingStatusFilter;
+
+        // Route name filter
+        const matchesRouteName =
+          routeNameFilter === "all" || booking.routeName === routeNameFilter;
+
+        const matchesDate = (() => {
+          if (dateFilter === "all") return true;
+          const bookingDate = new Date(
+            booking.createdAt || booking.journeyDate
+          );
+          const today = new Date();
+          const yesterday = new Date(today);
+          yesterday.setDate(yesterday.getDate() - 1);
+
+          const bookingDateOnly = new Date(
+            bookingDate.getFullYear(),
+            bookingDate.getMonth(),
+            bookingDate.getDate()
+          );
+          const todayOnly = new Date(
+            today.getFullYear(),
+            today.getMonth(),
+            today.getDate()
+          );
+          const yesterdayOnly = new Date(
+            yesterday.getFullYear(),
+            yesterday.getMonth(),
+            yesterday.getDate()
+          );
+
+          if (dateFilter === "today") {
+            return bookingDateOnly.getTime() === todayOnly.getTime();
+          } else if (dateFilter === "yesterday") {
+            return bookingDateOnly.getTime() === yesterdayOnly.getTime();
+          } else if (dateFilter === "custom" && customDate) {
+            const [year, month, day] = customDate.split("-").map(Number);
+            const customDateOnly = new Date(year, month - 1, day);
+            return bookingDateOnly.getTime() === customDateOnly.getTime();
+          }
+          return true;
+        })();
+
+        return (
+          matchesSearch && matchesStatus && matchesDate && matchesRouteName
+        );
+      });
+
+      const tableData = filteredBookings.map((booking, index) => [
+        index + 1,
+        booking.passengerName || "N/A",
+        booking._id
+          ? typeof booking._id === "string"
+            ? booking._id.substring(0, 8) + "..."
+            : String(booking._id).substring(0, 8) + "..."
+          : "N/A",
+        booking.routeName || "N/A",
+        booking.boardingPoint || "N/A",
+        booking.dropoffPoint || "N/A",
+        booking.routeNumber || "N/A",
+        booking.status || "N/A",
+        formatCurrency(booking.totalFare),
+        formatDate(booking.journeyDate || booking.createdAt),
+      ]);
+
+      // Check if we have data to display
+      if (tableData.length === 0) {
+        doc.setFontSize(12);
+        doc.text("No bookings found matching the current filters.", 14, 50);
+      } else {
+        // Table
+        autoTable(doc, {
+          head: [
+            [
+              "#",
+              "Passenger",
+              "Booking ID",
+              "Route Name",
+              "Boarding Point",
+              "Drop-off Point",
+              "Route #",
+              "Status",
+              "Amount",
+              "Date",
+            ],
+          ],
+          body: tableData,
+          startY: 45,
+          styles: { fontSize: 7 }, // Reduced font size to fit more columns
+          headStyles: { fillColor: [59, 130, 246] },
+          alternateRowStyles: { fillColor: [248, 250, 252] },
+          columnStyles: {
+            0: { cellWidth: 8 }, // # column
+            1: { cellWidth: 25 }, // Passenger column
+            2: { cellWidth: 20 }, // Booking ID column
+            3: { cellWidth: 25 }, // Route Name column
+            4: { cellWidth: 25 }, // Boarding Point column
+            5: { cellWidth: 25 }, // Drop-off Point column
+          },
+        });
+      }
+
+      // Summary
+      const totalBookings = filteredBookings.length;
+      const paidBookings = filteredBookings.filter(
+        (b) => b.status === "paid"
+      ).length;
+      const pendingBookings = filteredBookings.filter(
+        (b) => b.status === "pending"
+      ).length;
+      const cancelledBookings = filteredBookings.filter(
+        (b) => b.status === "cancelled"
+      ).length;
+      const totalRevenue = filteredBookings
+        .filter((b) => b.status === "paid")
+        .reduce((sum, b) => sum + (b.totalFare || 0), 0);
+
+      // Date range information
+      let dateRangeInfo = "";
+      if (filteredBookings.length > 0) {
+        const dates = filteredBookings
+          .map((b) => new Date(b.journeyDate || b.createdAt))
+          .filter((d) => !isNaN(d.getTime()))
+          .sort((a, b) => a - b);
+
+        if (dates.length > 0) {
+          const earliestDate = dates[0];
+          const latestDate = dates[dates.length - 1];
+
+          if (earliestDate.getTime() === latestDate.getTime()) {
+            dateRangeInfo = `Date Range: ${earliestDate.toLocaleDateString()}`;
+          } else {
+            dateRangeInfo = `Date Range: ${earliestDate.toLocaleDateString()} - ${latestDate.toLocaleDateString()}`;
+          }
+        }
+      }
+
+      doc.setFontSize(12);
+      doc.text("Summary:", 14, doc.lastAutoTable?.finalY + 20 || 100);
+      doc.setFontSize(10);
+      doc.text(
+        `Total Bookings: ${totalBookings}`,
+        14,
+        doc.lastAutoTable?.finalY + 30 || 110
+      );
+      doc.text(
+        `Paid Bookings: ${paidBookings}`,
+        14,
+        doc.lastAutoTable?.finalY + 40 || 120
+      );
+      doc.text(
+        `Pending Bookings: ${pendingBookings}`,
+        14,
+        doc.lastAutoTable?.finalY + 50 || 130
+      );
+      doc.text(
+        `Cancelled Bookings: ${cancelledBookings}`,
+        14,
+        doc.lastAutoTable?.finalY + 60 || 140
+      );
+      doc.text(
+        `Total Revenue: ${formatCurrency(totalRevenue)}`,
+        14,
+        doc.lastAutoTable?.finalY + 70 || 150
+      );
+
+      if (dateRangeInfo) {
+        doc.text(dateRangeInfo, 14, doc.lastAutoTable?.finalY + 80 || 160);
+      }
+
+      // Add route-specific information if a specific route is selected
+      if (routeNameFilter !== "all") {
+        doc.text(
+          `Route: ${routeNameFilter}`,
+          14,
+          doc.lastAutoTable?.finalY + 90 || 170
+        );
+
+        // Calculate route-specific metrics
+        const routeRevenue = filteredBookings
+          .filter((b) => b.status === "paid")
+          .reduce((sum, b) => sum + (b.totalFare || 0), 0);
+
+        doc.text(
+          `Route Total Revenue: ${formatCurrency(routeRevenue)}`,
+          14,
+          doc.lastAutoTable?.finalY + 100 || 180
+        );
+      }
+
+      // Save with date-specific and route-specific filename
+      let filename = `bookings-report-${
+        new Date().toISOString().split("T")[0]
+      }`;
+      if (dateFilter !== "all") {
+        if (dateFilter === "today") {
+          filename += "-today";
+        } else if (dateFilter === "yesterday") {
+          filename += "-yesterday";
+        } else if (dateFilter === "custom" && customDate) {
+          filename += `-${customDate}`;
+        } else {
+          filename += `-${dateFilter}`;
+        }
+      }
+
+      // Add route name to filename if a specific route is selected
+      if (routeNameFilter !== "all") {
+        // Replace spaces and special characters in route name for a valid filename
+        const routeFilename = routeNameFilter
+          .replace(/[^a-zA-Z0-9]/g, "-")
+          .toLowerCase();
+        filename += `-route-${routeFilename}`;
+      }
+      doc.save(`${filename}.pdf`);
+      toast.success("Bookings report generated successfully!");
+    } catch (error) {
+      console.error("Error generating bookings report:", error);
+      toast.error("Failed to generate bookings report");
+    }
   };
 
   const getStatusBadge = (status) => {
@@ -406,6 +1052,17 @@ Status: ${refund.cancellationDetails?.refundStatus}
                 <CreditCard className="inline w-4 h-4 mr-2" />
                 Refund Management
               </button>
+              <button
+                onClick={() => setActiveTab("contact-messages")}
+                className={`py-2 px-1 border-b-2 font-medium cursor-pointer text-sm ${
+                  activeTab === "contact-messages"
+                    ? "border-indigo-500 text-indigo-400"
+                    : "border-transparent text-gray-400 hover:text-gray-300"
+                }`}
+              >
+                <Mail className="inline w-4 h-4 mr-2" />
+                Contact Messages
+              </button>
             </div>
             <Link
               to="/dashboard"
@@ -422,6 +1079,14 @@ Status: ${refund.cancellationDetails?.refundStatus}
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-semibold">User List</h2>
               <div className="flex gap-4">
+                {/* Generate Report Button */}
+                <button
+                  onClick={generateUsersReport}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-800 hover:bg-blue-700 text-white rounded-lg transition-colors cursor-pointer"
+                >
+                  <FileText className="w-4 h-4" />
+                  Generate Report
+                </button>
                 {/* Search input */}
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -639,6 +1304,14 @@ Status: ${refund.cancellationDetails?.refundStatus}
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-semibold">User Bookings</h2>
                 <div className="flex gap-4">
+                  {/* Generate Report Button */}
+                  <button
+                    onClick={generateBookingsReport}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-800 hover:bg-blue-700 text-white rounded-lg transition-colors cursor-pointer"
+                  >
+                    <FileText className="w-4 h-4" />
+                    Generate Report
+                  </button>
                   {/* Search input */}
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -660,6 +1333,10 @@ Status: ${refund.cancellationDetails?.refundStatus}
                     <option value="paid">Paid</option>
                     <option value="pending">Pending</option>
                     <option value="rejected">Rejected</option>
+                    <option value="cancelled">Cancelled</option>
+                    <option value="pending_verification">
+                      Pending Verification
+                    </option>
                   </select>
                   {/* Date Filter */}
                   <select
@@ -671,6 +1348,30 @@ Status: ${refund.cancellationDetails?.refundStatus}
                     <option value="today">Today</option>
                     <option value="yesterday">Yesterday</option>
                     <option value="custom">Custom Date</option>
+                  </select>
+                  {/* Route Name Filter */}
+                  <select
+                    value={routeNameFilter}
+                    onChange={(e) => setRouteNameFilter(e.target.value)}
+                    className="px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  >
+                    <option value="all">All Routes</option>
+                    {(() => {
+                      // Get unique route names from bookings
+                      const uniqueRoutes = [
+                        ...new Set(
+                          bookings
+                            .filter((booking) => booking.routeName)
+                            .map((booking) => booking.routeName)
+                        ),
+                      ].sort();
+
+                      return uniqueRoutes.map((routeName) => (
+                        <option key={routeName} value={routeName}>
+                          {routeName}
+                        </option>
+                      ));
+                    })()}
                   </select>
                   {/* Custom Date Input */}
                   {dateFilter === "custom" && (
@@ -694,221 +1395,368 @@ Status: ${refund.cancellationDetails?.refundStatus}
                 </div>
               ) : bookings && bookings.length > 0 ? (
                 <div className="space-y-4">
-                  {bookings
-                    .filter((booking) => {
-                      // Search filter
-                      const matchesSearch =
-                        searchTerm === "" ||
-                        booking.passengerName
-                          ?.toLowerCase()
-                          .includes(searchTerm.toLowerCase()) ||
-                        booking._id?.toString().includes(searchTerm) ||
-                        booking.boardingPoint
-                          ?.toLowerCase()
-                          .includes(searchTerm.toLowerCase()) ||
-                        booking.dropoffPoint
-                          ?.toLowerCase()
-                          .includes(searchTerm.toLowerCase());
+                  {(() => {
+                    // Filter and sort bookings
+                    console.log(
+                      "Total bookings before filtering:",
+                      bookings.length
+                    );
+                    console.log("Current route filter:", routeNameFilter);
 
-                      // Status filter
-                      const matchesStatus =
-                        bookingStatusFilter === "all" ||
-                        booking.status === bookingStatusFilter;
+                    const filteredBookings = bookings
+                      .filter((booking) => {
+                        // Search filter
+                        const matchesSearch =
+                          searchTerm === "" ||
+                          booking.passengerName
+                            ?.toLowerCase()
+                            .includes(searchTerm.toLowerCase()) ||
+                          booking._id?.toString().includes(searchTerm) ||
+                          booking.boardingPoint
+                            ?.toLowerCase()
+                            .includes(searchTerm.toLowerCase()) ||
+                          booking.dropoffPoint
+                            ?.toLowerCase()
+                            .includes(searchTerm.toLowerCase());
 
-                      // Date filter
-                      const matchesDate = (() => {
-                        if (dateFilter === "all") return true;
+                        // Status filter
+                        const matchesStatus =
+                          bookingStatusFilter === "all" ||
+                          booking.status === bookingStatusFilter;
 
-                        const bookingDate = new Date(
-                          booking.createdAt || booking.journeyDate
-                        );
-                        const today = new Date();
-                        const yesterday = new Date(today);
-                        yesterday.setDate(yesterday.getDate() - 1);
+                        // Date filter
+                        const matchesDate = (() => {
+                          if (dateFilter === "all") return true;
 
-                        // Reset time to start of day for comparison
-                        const bookingDateOnly = new Date(
-                          bookingDate.getFullYear(),
-                          bookingDate.getMonth(),
-                          bookingDate.getDate()
-                        );
-                        const todayOnly = new Date(
-                          today.getFullYear(),
-                          today.getMonth(),
-                          today.getDate()
-                        );
-                        const yesterdayOnly = new Date(
-                          yesterday.getFullYear(),
-                          yesterday.getMonth(),
-                          yesterday.getDate()
-                        );
-
-                        if (dateFilter === "today") {
-                          return (
-                            bookingDateOnly.getTime() === todayOnly.getTime()
+                          const bookingDate = new Date(
+                            booking.createdAt || booking.journeyDate
                           );
-                        } else if (dateFilter === "yesterday") {
-                          return (
-                            bookingDateOnly.getTime() ===
-                            yesterdayOnly.getTime()
-                          );
-                        } else if (dateFilter === "custom" && customDate) {
-                          // Parse custom date and create date object for comparison
-                          const [year, month, day] = customDate
-                            .split("-")
-                            .map(Number);
-                          const customDateOnly = new Date(year, month - 1, day);
+                          const today = new Date();
+                          const yesterday = new Date(today);
+                          yesterday.setDate(yesterday.getDate() - 1);
 
-                          // Debug logging
-                          console.log("Custom date filter:", {
-                            customDate,
-                            customDateOnly: customDateOnly.toDateString(),
-                            bookingDateOnly: bookingDateOnly.toDateString(),
-                            matches:
+                          // Reset time to start of day for comparison
+                          const bookingDateOnly = new Date(
+                            bookingDate.getFullYear(),
+                            bookingDate.getMonth(),
+                            bookingDate.getDate()
+                          );
+                          const todayOnly = new Date(
+                            today.getFullYear(),
+                            today.getMonth(),
+                            today.getDate()
+                          );
+                          const yesterdayOnly = new Date(
+                            yesterday.getFullYear(),
+                            yesterday.getMonth(),
+                            yesterday.getDate()
+                          );
+
+                          if (dateFilter === "today") {
+                            return (
+                              bookingDateOnly.getTime() === todayOnly.getTime()
+                            );
+                          } else if (dateFilter === "yesterday") {
+                            return (
                               bookingDateOnly.getTime() ===
-                              customDateOnly.getTime(),
-                          });
+                              yesterdayOnly.getTime()
+                            );
+                          } else if (dateFilter === "custom" && customDate) {
+                            // Parse custom date and create date object for comparison
+                            const [year, month, day] = customDate
+                              .split("-")
+                              .map(Number);
+                            const customDateOnly = new Date(
+                              year,
+                              month - 1,
+                              day
+                            );
 
-                          return (
-                            bookingDateOnly.getTime() ===
-                            customDateOnly.getTime()
-                          );
+                            // Debug logging
+                            console.log("Custom date filter:", {
+                              customDate,
+                              customDateOnly: customDateOnly.toDateString(),
+                              bookingDateOnly: bookingDateOnly.toDateString(),
+                              matches:
+                                bookingDateOnly.getTime() ===
+                                customDateOnly.getTime(),
+                            });
+
+                            return (
+                              bookingDateOnly.getTime() ===
+                              customDateOnly.getTime()
+                            );
+                          }
+
+                          return true;
+                        })();
+
+                        // Route name filter
+                        // When "all" is selected, show all bookings regardless of route
+                        // When specific route is selected, only show bookings with that route
+                        const matchesRouteName =
+                          routeNameFilter === "all" ||
+                          booking.routeName === routeNameFilter;
+
+                        return (
+                          matchesSearch &&
+                          matchesStatus &&
+                          matchesDate &&
+                          matchesRouteName
+                        );
+                      })
+                      .sort((a, b) => {
+                        // Sort by newest first (changed priority to show latest bookings on first page)
+                        const dateA = new Date(a.createdAt || a.journeyDate);
+                        const dateB = new Date(b.createdAt || b.journeyDate);
+
+                        // Compare dates first (newest bookings first)
+                        if (dateA.getTime() !== dateB.getTime()) {
+                          return dateB - dateA; // Newest bookings first
                         }
 
-                        return true;
-                      })();
+                        // If dates are the same, then sort by route name
+                        const routeNameA = a.routeName || "";
+                        const routeNameB = b.routeName || "";
+                        return routeNameA.localeCompare(routeNameB);
+                      });
 
-                      return matchesSearch && matchesStatus && matchesDate;
-                    })
-                    .sort((a, b) => {
-                      // Sort by newest first by default
-                      const dateA = new Date(a.createdAt || a.journeyDate);
-                      const dateB = new Date(b.createdAt || b.journeyDate);
-                      return dateB - dateA;
-                    })
-                    .map((booking) => (
-                      <div
-                        key={booking._id}
-                        className="bg-slate-700 rounded-lg p-6 border border-slate-600 hover:border-slate-500 transition-colors"
-                      >
-                        <div className="flex flex-col md:flex-row justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-4 mb-3">
-                              <h3 className="text-lg font-semibold text-white">
-                                Booking #{booking._id}
-                              </h3>
-                              <span
-                                className={`inline-flex items-center px-3 py-1 rounded-md text-xs font-medium ${
-                                  booking.status === "paid"
-                                    ? "bg-green-900 text-green-300"
-                                    : booking.status === "rejected"
-                                    ? "bg-red-900 text-red-300"
-                                    : "bg-amber-900 text-amber-300"
+                    // Calculate pagination
+                    console.log(
+                      "Bookings sorted by newest first, showing on first page"
+                    );
+                    const totalFilteredBookings = filteredBookings.length;
+                    // Using SCREAMING_SNAKE_CASE to satisfy ESLint rule
+                    const TOTAL_PAGES = Math.ceil(
+                      totalFilteredBookings / bookingsPerPage
+                    );
+
+                    // Get current page bookings
+                    const startIndex =
+                      (currentBookingPage - 1) * bookingsPerPage;
+                    const endIndex = startIndex + bookingsPerPage;
+                    const currentBookings = filteredBookings.slice(
+                      startIndex,
+                      endIndex
+                    );
+
+                    console.log(
+                      "Filtered bookings count:",
+                      filteredBookings.length
+                    );
+
+                    return (
+                      <>
+                        {currentBookings.map((booking) => (
+                          <div
+                            key={booking._id}
+                            className="bg-slate-700 rounded-lg p-6 border border-slate-600 hover:border-slate-500 transition-colors"
+                          >
+                            <div className="flex flex-col md:flex-row justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-4 mb-3">
+                                  <div className="flex flex-col">
+                                    <h3 className="text-lg font-semibold text-white">
+                                      Booking #{booking._id}
+                                    </h3>
+                                    {booking.routeName && (
+                                      <div className="text-sm text-gray-300 mt-1">
+                                        {booking.routeName}
+                                      </div>
+                                    )}
+                                    {booking.routeNumber && (
+                                      <div className="text-xs text-gray-400 mt-1">
+                                        Route #{booking.routeNumber}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <span
+                                    className={`inline-flex items-center px-3 py-1 rounded-md text-xs font-medium ${
+                                      booking.status === "paid"
+                                        ? "bg-green-900 text-green-300"
+                                        : booking.status === "rejected"
+                                        ? "bg-red-900 text-red-300"
+                                        : booking.status === "cancelled"
+                                        ? "bg-red-900 text-red-300"
+                                        : booking.status ===
+                                          "pending_verification"
+                                        ? "bg-yellow-900 text-yellow-300"
+                                        : "bg-amber-900 text-amber-300"
+                                    }`}
+                                  >
+                                    {booking.status === "paid" ? (
+                                      <CheckCircle className="w-3 h-3 mr-1" />
+                                    ) : booking.status === "rejected" ? (
+                                      <XCircle className="w-3 h-3 mr-1" />
+                                    ) : booking.status === "cancelled" ? (
+                                      <XCircle className="w-3 h-3 mr-1" />
+                                    ) : booking.status ===
+                                      "pending_verification" ? (
+                                      <Clock className="w-3 h-3 mr-1" />
+                                    ) : (
+                                      <Clock className="w-3 h-3 mr-1" />
+                                    )}
+                                    {booking.status === "paid"
+                                      ? "Paid"
+                                      : booking.status === "rejected"
+                                      ? "Rejected"
+                                      : booking.status === "cancelled"
+                                      ? "Cancelled"
+                                      : booking.status ===
+                                        "pending_verification"
+                                      ? "Pending Verification"
+                                      : "Pending"}
+                                  </span>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+                                  <div className="flex flex-col">
+                                    <span className="text-gray-400 flex items-center gap-1">
+                                      <User className="w-3 h-3" /> Passenger
+                                    </span>
+                                    <span className="font-medium">
+                                      {booking.passengerName}
+                                    </span>
+                                  </div>
+
+                                  <div className="flex flex-col">
+                                    <span className="text-gray-400 flex items-center gap-1">
+                                      <MapPin className="w-3 h-3" /> Route
+                                    </span>
+                                    <span className="font-medium">
+                                      {booking.boardingPoint} →{" "}
+                                      {booking.dropoffPoint}
+                                    </span>
+                                  </div>
+
+                                  <div className="flex flex-col">
+                                    <span className="text-gray-400 flex items-center gap-1">
+                                      <Calendar className="w-3 h-3" /> Journey
+                                      Date
+                                    </span>
+                                    <span>
+                                      {formatDate(booking.journeyDate)}
+                                    </span>
+                                  </div>
+
+                                  <div className="flex flex-col">
+                                    <span className="text-gray-400 flex items-center gap-1">
+                                      <CreditCard className="w-3 h-3" /> Payment
+                                    </span>
+                                    <span
+                                      className={`${
+                                        booking.status === "paid"
+                                          ? "text-green-400"
+                                          : booking.status === "rejected"
+                                          ? "text-red-400"
+                                          : booking.status === "cancelled"
+                                          ? "text-red-400"
+                                          : booking.status ===
+                                            "pending_verification"
+                                          ? "text-yellow-400"
+                                          : "text-amber-400"
+                                      } font-medium`}
+                                    >
+                                      {formatCurrency(booking.totalFare)} •{" "}
+                                      {booking.status === "paid"
+                                        ? "Paid"
+                                        : booking.status === "rejected"
+                                        ? "Rejected"
+                                        : booking.status === "cancelled"
+                                        ? "Cancelled"
+                                        : booking.status ===
+                                          "pending_verification"
+                                        ? "Pending Verification"
+                                        : "Pending"}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                <div className="mt-4 flex flex-wrap gap-2">
+                                  <span className="inline-flex items-center px-2 py-1 bg-slate-800 rounded-md text-xs">
+                                    <Bus className="w-3 h-3 mr-1 text-indigo-400" />
+                                    {booking.busType || "Luxury Bus"}
+                                  </span>
+                                  <span className="inline-flex items-center px-2 py-1 bg-slate-800 rounded-md text-xs">
+                                    <User className="w-3 h-3 mr-1 text-indigo-400" />
+                                    {booking.seats ? booking.seats.length : 1}{" "}
+                                    {booking.seats && booking.seats.length > 1
+                                      ? "Seats"
+                                      : "Seat"}
+                                  </span>
+                                  {booking.paymentMethod && (
+                                    <span className="inline-flex items-center px-2 py-1 bg-slate-800 rounded-md text-xs">
+                                      <CreditCard className="w-3 h-3 mr-1 text-indigo-400" />
+                                      {booking.paymentMethod}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+
+                              <div className="mt-4 md:mt-0 md:ml-4 flex items-start">
+                                <button
+                                  className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                                  onClick={() => {
+                                    // Handle view booking details
+                                    toast.info(
+                                      "Booking details feature coming soon"
+                                    );
+                                  }}
+                                >
+                                  <Eye className="w-4 h-4" />
+                                  Details
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+
+                        {/* Pagination Controls */}
+                        {TOTAL_PAGES > 1 && (
+                          <div className="mt-6 flex justify-between items-center">
+                            <p className="text-sm text-gray-400">
+                              Showing page {currentBookingPage} of {TOTAL_PAGES}
+                            </p>
+                            <div className="flex space-x-2">
+                              <button
+                                onClick={() =>
+                                  setCurrentBookingPage(
+                                    Math.max(1, currentBookingPage - 1)
+                                  )
+                                }
+                                disabled={currentBookingPage === 1}
+                                className={`px-4 py-2 rounded-md ${
+                                  currentBookingPage === 1
+                                    ? "bg-gray-700 text-gray-500 cursor-not-allowed"
+                                    : "bg-slate-700 text-white hover:bg-slate-600"
                                 }`}
                               >
-                                {booking.status === "paid" ? (
-                                  <CheckCircle className="w-3 h-3 mr-1" />
-                                ) : booking.status === "rejected" ? (
-                                  <XCircle className="w-3 h-3 mr-1" />
-                                ) : (
-                                  <Clock className="w-3 h-3 mr-1" />
-                                )}
-                                {booking.status === "paid"
-                                  ? "Paid"
-                                  : booking.status === "rejected"
-                                  ? "Rejected"
-                                  : "Pending"}
-                              </span>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
-                              <div className="flex flex-col">
-                                <span className="text-gray-400 flex items-center gap-1">
-                                  <User className="w-3 h-3" /> Passenger
-                                </span>
-                                <span className="font-medium">
-                                  {booking.passengerName}
-                                </span>
-                              </div>
-
-                              <div className="flex flex-col">
-                                <span className="text-gray-400 flex items-center gap-1">
-                                  <MapPin className="w-3 h-3" /> Route
-                                </span>
-                                <span className="font-medium">
-                                  {booking.boardingPoint} →{" "}
-                                  {booking.dropoffPoint}
-                                </span>
-                              </div>
-
-                              <div className="flex flex-col">
-                                <span className="text-gray-400 flex items-center gap-1">
-                                  <Calendar className="w-3 h-3" /> Journey Date
-                                </span>
-                                <span>{formatDate(booking.journeyDate)}</span>
-                              </div>
-
-                              <div className="flex flex-col">
-                                <span className="text-gray-400 flex items-center gap-1">
-                                  <CreditCard className="w-3 h-3" /> Payment
-                                </span>
-                                <span
-                                  className={`${
-                                    booking.status === "paid"
-                                      ? "text-green-400"
-                                      : booking.status === "rejected"
-                                      ? "text-red-400"
-                                      : "text-amber-400"
-                                  } font-medium`}
-                                >
-                                  {formatCurrency(booking.totalFare)} •{" "}
-                                  {booking.status === "paid"
-                                    ? "Paid"
-                                    : booking.status === "rejected"
-                                    ? "Rejected"
-                                    : "Pending"}
-                                </span>
-                              </div>
-                            </div>
-
-                            <div className="mt-4 flex flex-wrap gap-2">
-                              <span className="inline-flex items-center px-2 py-1 bg-slate-800 rounded-md text-xs">
-                                <Bus className="w-3 h-3 mr-1 text-indigo-400" />
-                                {booking.busType || "Luxury Bus"}
-                              </span>
-                              <span className="inline-flex items-center px-2 py-1 bg-slate-800 rounded-md text-xs">
-                                <User className="w-3 h-3 mr-1 text-indigo-400" />
-                                {booking.seats ? booking.seats.length : 1}{" "}
-                                {booking.seats && booking.seats.length > 1
-                                  ? "Seats"
-                                  : "Seat"}
-                              </span>
-                              {booking.paymentMethod && (
-                                <span className="inline-flex items-center px-2 py-1 bg-slate-800 rounded-md text-xs">
-                                  <CreditCard className="w-3 h-3 mr-1 text-indigo-400" />
-                                  {booking.paymentMethod}
-                                </span>
-                              )}
+                                Previous
+                              </button>
+                              <button
+                                onClick={() =>
+                                  setCurrentBookingPage(
+                                    Math.min(
+                                      TOTAL_PAGES,
+                                      currentBookingPage + 1
+                                    )
+                                  )
+                                }
+                                disabled={currentBookingPage === TOTAL_PAGES}
+                                className={`px-4 py-2 rounded-md ${
+                                  currentBookingPage === TOTAL_PAGES
+                                    ? "bg-gray-700 text-gray-500 cursor-not-allowed"
+                                    : "bg-slate-700 text-white hover:bg-slate-600"
+                                }`}
+                              >
+                                Next
+                              </button>
                             </div>
                           </div>
-
-                          <div className="mt-4 md:mt-0 md:ml-4 flex items-start">
-                            <button
-                              className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
-                              onClick={() => {
-                                // Handle view booking details
-                                toast.info(
-                                  "Booking details feature coming soon"
-                                );
-                              }}
-                            >
-                              <Eye className="w-4 h-4" />
-                              Details
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
+                        )}
+                      </>
+                    );
+                  })()}
                 </div>
               ) : (
                 <div className="text-center py-8 text-gray-400">
@@ -1067,19 +1915,47 @@ Status: ${refund.cancellationDetails?.refundStatus}
                                 onClick={() =>
                                   handleApproveTransfer(transfer._id)
                                 }
-                                className="flex items-center justify-center gap-2 px-4 py-2 cursor-pointer bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+                                disabled={processingTransfer === transfer._id}
+                                className={`flex items-center justify-center gap-2 px-4 py-2 cursor-pointer bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors ${
+                                  processingTransfer === transfer._id
+                                    ? "opacity-50 cursor-not-allowed"
+                                    : ""
+                                }`}
                               >
-                                <CheckCircle className="w-4 h-4" />
-                                Approve
+                                {processingTransfer === transfer._id ? (
+                                  <>
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                    Processing...
+                                  </>
+                                ) : (
+                                  <>
+                                    <CheckCircle className="w-4 h-4" />
+                                    Approve
+                                  </>
+                                )}
                               </button>
                               <button
                                 onClick={() =>
                                   handleRejectTransfer(transfer._id)
                                 }
-                                className="flex items-center justify-center gap-2 px-4 py-2 cursor-pointer bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+                                disabled={processingTransfer === transfer._id}
+                                className={`flex items-center justify-center gap-2 px-4 py-2 cursor-pointer bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors ${
+                                  processingTransfer === transfer._id
+                                    ? "opacity-50 cursor-not-allowed"
+                                    : ""
+                                }`}
                               >
-                                <XCircle className="w-4 h-4" />
-                                Reject
+                                {processingTransfer === transfer._id ? (
+                                  <>
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                    Processing...
+                                  </>
+                                ) : (
+                                  <>
+                                    <XCircle className="w-4 h-4" />
+                                    Reject
+                                  </>
+                                )}
                               </button>
                             </>
                           )}
@@ -1309,6 +2185,25 @@ Status: ${refund.cancellationDetails?.refundStatus}
                   <option value="processed">Processed</option>
                   <option value="failed">Failed</option>
                 </select>
+                
+                {/* Generate Report Button */}
+                <button
+                  onClick={generateRefundsReport}
+                  disabled={generatingRefundReport}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-800 hover:bg-blue-700 text-white rounded-lg transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {generatingRefundReport ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <FileText className="w-4 h-4" />
+                      Generate Report
+                    </>
+                  )}
+                </button>
               </div>
             </div>
 
@@ -1444,17 +2339,41 @@ Status: ${refund.cancellationDetails?.refundStatus}
                               onClick={() =>
                                 handleProcessRefund(refund._id, "processed")
                               }
-                              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors"
+                              disabled={processingRefund === refund._id}
+                              className={`px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+                                processingRefund === refund._id
+                                  ? "opacity-50 cursor-not-allowed"
+                                  : ""
+                              }`}
                             >
-                              Mark as Processed
+                              {processingRefund === refund._id ? (
+                                <>
+                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                  Processing...
+                                </>
+                              ) : (
+                                "Mark as Processed"
+                              )}
                             </button>
                             <button
                               onClick={() =>
                                 handleProcessRefund(refund._id, "failed")
                               }
-                              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors"
+                              disabled={processingRefund === refund._id}
+                              className={`px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+                                processingRefund === refund._id
+                                  ? "opacity-50 cursor-not-allowed"
+                                  : ""
+                              }`}
                             >
-                              Mark as Failed
+                              {processingRefund === refund._id ? (
+                                <>
+                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                  Processing...
+                                </>
+                              ) : (
+                                "Mark as Failed"
+                              )}
                             </button>
                           </>
                         )}
@@ -1464,6 +2383,149 @@ Status: ${refund.cancellationDetails?.refundStatus}
                         >
                           View Details
                         </button>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Contact Messages Tab Content */}
+      {activeTab === "contact-messages" && (
+        <div className="space-y-6 ">
+          <div className="bg-slate-800 rounded-lg shadow-lg p-6 w-[88%] mx-auto -mt-7">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-semibold">Contact Messages</h2>
+              <div className="flex gap-4">
+                {/* Sort Filter */}
+                <select
+                  value={contactStatusFilter}
+                  onChange={(e) => setContactStatusFilter(e.target.value)}
+                  className="px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                >
+                  <option value="all">All Messages</option>
+                  <option value="recent">Recent First</option>
+                  <option value="oldest">Oldest First</option>
+                  <option value="contactId">By Contact ID</option>
+                </select>
+              </div>
+            </div>
+
+            {isLoading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500 mx-auto mb-4"></div>
+                <p className="text-gray-400">Loading contact messages...</p>
+              </div>
+            ) : contactMessages.length === 0 ? (
+              <div className="text-center py-8">
+                <Mail className="h-12 w-12 text-gray-500 mx-auto mb-4" />
+                <p className="text-gray-400">No contact messages found</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {contactMessages
+                  .sort((a, b) => {
+                    switch (contactStatusFilter) {
+                      case "recent":
+                        return new Date(b.createdAt) - new Date(a.createdAt);
+                      case "oldest":
+                        return new Date(a.createdAt) - new Date(b.createdAt);
+                      case "contactId":
+                        return a.contactId - b.contactId;
+                      default:
+                        return new Date(b.createdAt) - new Date(a.createdAt);
+                    }
+                  })
+                  .map((message) => (
+                    <div
+                      key={message._id}
+                      className="bg-slate-800 rounded-lg p-6 border border-slate-600 hover:border-blue-500 transition-colors shadow-lg"
+                    >
+                      <div className="flex justify-between items-start mb-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <h3 className="text-lg font-semibold text-white">
+                              {message.name || 'Unknown'}
+                            </h3>
+                            <span className="px-2 py-1 rounded-full text-xs font-medium bg-indigo-900 text-indigo-200 border border-indigo-700">
+                              Contact #{message.contactId || 'N/A'}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-4 text-sm text-gray-400 mb-3">
+                            <div className="flex items-center gap-1">
+                              <Mail className="h-4 w-4" />
+                              {message.email || 'No email'}
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Phone className="h-4 w-4 text-emerald-400" />
+                              {message.phoneNumber || 'No phone'}
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Calendar className="h-4 w-4" />
+                              {message.createdAt ? new Date(message.createdAt).toLocaleDateString() : 'No date'}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="bg-slate-900 rounded-lg p-4 mb-4 border border-slate-700">
+                        <h4 className="text-sm font-medium text-gray-300 mb-2">Message:</h4>
+                        <p className="text-gray-200 whitespace-pre-wrap">{message.contactMessage || 'No message content'}</p>
+                      </div>
+
+                      <div className="flex justify-end">
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => window.open(`mailto:${message.email || ''}?subject=Re: Your Contact Message`, '_blank')}
+                            disabled={!message.email}
+                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
+                              message.email 
+                                ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg' 
+                                : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                            }`}
+                          >
+                            <Mail className="h-4 w-4" />
+                            Reply
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (message.email) {
+                                navigator.clipboard.writeText(message.email);
+                                toast.success("Email copied to clipboard!");
+                              } else {
+                                toast.error("No email available");
+                              }
+                            }}
+                            disabled={!message.email}
+                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                              message.email 
+                                ? 'bg-slate-600 hover:bg-slate-700 text-white shadow-md hover:shadow-lg' 
+                                : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                            }`}
+                          >
+                            Copy Email
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (message.phoneNumber) {
+                                navigator.clipboard.writeText(message.phoneNumber.toString());
+                                toast.success("Phone number copied to clipboard!");
+                              } else {
+                                toast.error("No phone number available");
+                              }
+                            }}
+                            disabled={!message.phoneNumber}
+                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                              message.phoneNumber 
+                                ? 'bg-teal-800 hover:bg-teal-600 text-white shadow-md hover:shadow-lg' 
+                                : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                            }`}
+                          >
+                            Copy Phone
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}

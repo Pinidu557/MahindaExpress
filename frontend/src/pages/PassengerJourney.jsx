@@ -5,8 +5,8 @@ import {
   ArrowLeftRight,
   MoveRight,
   ShieldCheck,
-  Clock,
   AlertCircle,
+  Calendar,
 } from "lucide-react";
 import Footer from "../components/Footer";
 import { useNavigate } from "react-router-dom";
@@ -17,6 +17,24 @@ import { toast } from "react-toastify";
 const PassengerJourney = () => {
   // Removed authentication-related states
 
+  // Function to get today's date in YYYY-MM-DD format for min attribute
+  const getTodayFormatted = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  // Function to validate if selected date is not in the past
+  const validateDateNotPast = (selectedDate) => {
+    const today = new Date();
+    const selected = new Date(selectedDate);
+    today.setHours(0, 0, 0, 0);
+    selected.setHours(0, 0, 0, 0);
+    return selected >= today;
+  };
+
   // Define route-specific time schedules
   const routeSchedules = {
     "Colombo-Ampara": [
@@ -25,18 +43,23 @@ const PassengerJourney = () => {
     "Colombo-Anuradhapura": [
       { departure: "07:00 AM", arrival: "01:25 PM", duration: "4h" },
     ],
+    "Kaduwela-Kollupitiya": [
+      { departure: "06:00 AM", arrival: "10:00 AM", duration: "4h" },
+    ],
     // Add more route schedules as needed
   };
 
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
-  const [date, setDate] = useState("");
+  const [date, setDate] = useState(getTodayFormatted());
   const [routes, setRoutes] = useState([]);
   const [filteredRoutes, setFilteredRoutes] = useState([]);
   const [searching, setSearching] = useState(false);
   const [searchPerformed, setSearchPerformed] = useState(false);
   const [selectedTimes, setSelectedTimes] = useState({});
   const [errors, setErrors] = useState({});
+  const [fromError, setFromError] = useState("");
+  const [toError, setToError] = useState("");
 
   const { backendUrl } = useContext(AppContent);
   const navigate = useNavigate();
@@ -113,18 +136,12 @@ const PassengerJourney = () => {
 
     if (!date) {
       newErrors.date = "Please select a travel date";
-    } else {
-      const selectedDate = new Date(date);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      if (selectedDate < today) {
-        newErrors.date = "Date cannot be in the past";
-      }
+    } else if (!validateDateNotPast(date)) {
+      newErrors.date = "Date cannot be in the past";
     }
 
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return Object.keys(newErrors).length === 0 && !fromError && !toError;
   };
 
   const handleSearch = (e) => {
@@ -147,46 +164,32 @@ const PassengerJourney = () => {
   };
 
   useEffect(() => {
-    // Removed authentication check code
+    // Set today's date when component mounts
+    setDate(getTodayFormatted());
+    
     const fetchRoutes = async () => {
       try {
+        console.log("Fetching routes from:", `${backendUrl}/api/routes`);
         const { data } = await axios.get(`${backendUrl}/api/routes`);
+        console.log("Fetched routes:", data);
+        
         // Initialize the first time slot as selected for each route
         const initialSelectedTimes = {};
         data.forEach((route) => {
-          initialSelectedTimes[route.id] = 0; // First time is selected by default
+          initialSelectedTimes[route._id] = 0; // First time is selected by default
         });
         setSelectedTimes(initialSelectedTimes);
         setRoutes(data);
+        setFilteredRoutes(data); // Initially show all routes
       } catch (error) {
-        toast.error(error.message);
+        console.error("Error fetching routes:", error);
+        toast.error("Failed to fetch routes: " + error.message);
+        setRoutes([]);
+        setFilteredRoutes([]);
       }
     };
     fetchRoutes();
   }, [backendUrl]);
-
-  // Mock routes for development/testing
-  useEffect(() => {
-    if (routes.length === 0) {
-      const mockRoutes = [
-        {
-          id: 1,
-          startLocation: "Colombo",
-          endLocation: "Ampara",
-          fare: "2000",
-        },
-        {
-          id: 2,
-          startLocation: "Colombo",
-          endLocation: "Anuradhapura",
-          fare: "2000",
-        },
-      ];
-      setRoutes(mockRoutes);
-      setFilteredRoutes(mockRoutes); // Initially show all routes
-      setSelectedTimes({ 1: 0, 2: 0 });
-    }
-  }, [routes.length]);
 
   // Updated function to handle booking button click - without authentication check
   const handleBookNowClick = async (route, timeSlot, journeyDateToUse) => {
@@ -283,16 +286,29 @@ const PassengerJourney = () => {
               list="stations"
               value={from}
               onChange={(e) => {
-                setFrom(e.target.value);
+                const value = e.target.value;
+                setFrom(value);
+                // Clear errors when valid input is entered
+                if (fromError) setFromError("");
                 if (errors.from) setErrors({ ...errors, from: "" });
               }}
+              onKeyDown={(e) => {
+                // Block numbers and special characters
+                if (/[0-9]/.test(e.key)) {
+                  e.preventDefault();
+                  setFromError("Numbers are not allowed");
+                  return;
+                }
+                // Clear error when valid key is pressed
+                if (fromError) setFromError("");
+              }}
               className={`bg-gray-800 text-white p-2 rounded-md outline-none placeholder-white ${
-                errors.from ? "border border-red-500" : ""
+                errors.from || fromError ? "border border-red-500" : ""
               }`}
               placeholder="From"
             />
-            {errors.from && (
-              <p className="text-red-500 text-xs mt-1">{errors.from}</p>
+            {(errors.from || fromError) && (
+              <p className="text-red-500 text-xs mt-1">{fromError || errors.from}</p>
             )}
           </div>
 
@@ -312,16 +328,29 @@ const PassengerJourney = () => {
               placeholder="To"
               value={to}
               onChange={(e) => {
-                setTo(e.target.value);
+                const value = e.target.value;
+                setTo(value);
+                // Clear errors when valid input is entered
+                if (toError) setToError("");
                 if (errors.to) setErrors({ ...errors, to: "" });
               }}
+              onKeyDown={(e) => {
+                // Block numbers and special characters
+                if (/[0-9]/.test(e.key)) {
+                  e.preventDefault();
+                  setToError("Numbers are not allowed");
+                  return;
+                }
+                // Clear error when valid key is pressed
+                if (toError) setToError("");
+              }}
               className={`bg-gray-800 text-white p-2 rounded-md outline-none placeholder-white ${
-                errors.to ? "border border-red-500" : ""
+                errors.to || toError ? "border border-red-500" : ""
               }`}
               list="stations"
             />
-            {errors.to && (
-              <p className="text-red-500 text-xs mt-1">{errors.to}</p>
+            {(errors.to || toError) && (
+              <p className="text-red-500 text-xs mt-1">{toError || errors.to}</p>
             )}
           </div>
 
@@ -337,18 +366,28 @@ const PassengerJourney = () => {
             <label className="text-sm font-bold text-yellow-400 mb-1">
               Date
             </label>
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => {
-                setDate(e.target.value);
-                if (errors.date) setErrors({ ...errors, date: "" });
-              }}
-              className={`bg-gray-800 text-white p-2 rounded-md outline-none ${
-                errors.date ? "border border-red-500" : ""
-              }`}
-              placeholder="Date"
-            />
+            <div className="relative">
+              <input
+                type="date"
+                value={date}
+                min={getTodayFormatted()}
+                max="2030-12-31"
+                onChange={(e) => {
+                  const selectedDate = e.target.value;
+                  if (selectedDate && validateDateNotPast(selectedDate)) {
+                    setDate(selectedDate);
+                    if (errors.date) setErrors({ ...errors, date: "" });
+                  } else if (selectedDate) {
+                    setErrors({ ...errors, date: "Date cannot be in the past" });
+                  }
+                }}
+                className={`bg-gray-800 text-white p-2 rounded-md outline-none w-full ${
+                  errors.date ? "border border-red-500" : ""
+                }`}
+                placeholder="Date"
+              />
+              <Calendar className="absolute right-3 top-2.5 h-4 w-4 text-white pointer-events-none" />
+            </div>
             {errors.date && (
               <p className="text-red-500 text-xs mt-1">{errors.date}</p>
             )}
@@ -405,7 +444,7 @@ const PassengerJourney = () => {
               ];
 
               // Get the selected time for this route
-              const timeSlot = scheduleForRoute[selectedTimes[route.id] || 0];
+              const timeSlot = scheduleForRoute[selectedTimes[route._id] || 0];
 
               // Check if departure time has passed
               const isTimePassed = isDepartureTimePassed(
@@ -422,9 +461,43 @@ const PassengerJourney = () => {
                 ? date
                 : new Date().toISOString().split("T")[0];
 
+              // Check vehicle availability
+              const hasAssignedVehicles = route.assignedVehicleIds && route.assignedVehicleIds.length > 0;
+              
+              // Check if all assigned vehicles are unavailable
+              const allVehiclesUnavailable = hasAssignedVehicles && 
+                route.assignedVehicleIds.every(vehicle => 
+                  vehicle.vehicleStatus === "Unavailable" || vehicle.vehicleStatus === "Under Maintenance"
+                );
+              
+              // Check if at least one vehicle is available
+              const hasAvailableVehicle = hasAssignedVehicles && 
+                route.assignedVehicleIds.some(vehicle => 
+                  vehicle.vehicleStatus === "Available"
+                );
+
+              // Check if seats are available (assuming 42 seats per vehicle)
+              const totalSeatsPerVehicle = 42;
+              const availableSeatsCount = hasAvailableVehicle ? 
+                route.assignedVehicleIds.filter(v => v.vehicleStatus === "Available").length * totalSeatsPerVehicle : 0;
+              
+              // For now, we'll assume seats are available if vehicle is available
+              // In a real implementation, you'd check booked seats from the database
+              const hasAvailableSeats = availableSeatsCount > 0;
+
+              console.log(`Route ${route.routeNumber || route.startLocation + '-' + route.endLocation}:`, {
+                hasAssignedVehicles,
+                allVehiclesUnavailable,
+                hasAvailableVehicle,
+                vehicles: route.assignedVehicleIds?.map(v => ({
+                  plateNumber: v.plateNumber,
+                  status: v.vehicleStatus
+                }))
+              });
+
               return (
                 <div
-                  key={route.id}
+                  key={route._id}
                   className="bg-slate-800 p-6 rounded-2xl flex flex-col md:flex-row justify-between items-start gap-6 shadow-lg"
                 >
                   {/* Left Section */}
@@ -495,50 +568,87 @@ const PassengerJourney = () => {
 
                   {/* Right Section */}
                   <div className="flex flex-col items-end gap-6 min-w-[120px]">
-                    <span className="px-3 py-2 rounded-lg text-sm bg-green-700 font-bold">
-                      Active
-                    </span>
+                    {/* Vehicle Status Badge */}
+                    {hasAvailableVehicle && hasAvailableSeats ? (
+                      <span className="px-3 py-2 rounded-lg text-sm bg-green-700 font-bold">
+                        Available
+                      </span>
+                    ) : hasAvailableVehicle && !hasAvailableSeats ? (
+                      <span className="px-3 py-2 rounded-lg text-sm bg-orange-600 font-bold">
+                        Seats Full
+                      </span>
+                    ) : allVehiclesUnavailable ? (
+                      <span className="px-3 py-2 rounded-lg text-sm bg-red-700 font-bold">
+                        Unavailable
+                      </span>
+                    ) : (
+                      <span className="px-3 py-2 rounded-lg text-sm bg-yellow-600 font-bold">
+                        No Vehicles
+                      </span>
+                    )}
+                    
                     <p className="text-2xl font-bold">
                       <span className="mr-3">LKR</span>
                       {route.fare}
                     </p>
 
                     <div className="flex flex-col gap-2">
-                      <div className="flex gap-4">
-                        <button className="bg-slate-700 px-4 py-2 rounded-lg hover:bg-slate-600 cursor-pointer flex gap-1 items-center justify-center">
-                          <Clock size={20} />
-                          Timetable
-                        </button>
-                        <button
-                          onClick={() =>
-                            handleBookNowClick(
-                              route,
-                              timeSlot,
-                              journeyDateToUse
-                            )
-                          }
-                          className={`flex items-center justify-center gap-1 px-8 py-3 rounded-lg whitespace-nowrap text-md
-                            bg-indigo-600 cursor-pointer font-semibold hover:bg-indigo-700`}
-                        >
-                          {isTimePassed ? (
-                            <>
-                              Book for tomorrow
-                              <MoveRight
-                                size={20}
-                                className="text-white font-bold"
-                              />
-                            </>
-                          ) : (
-                            <>
-                              Book Now
-                              <MoveRight
-                                size={20}
-                                className="text-white font-bold"
-                              />
-                            </>
-                          )}
-                        </button>
-                      </div>
+                        {/* Conditional Booking Button */}
+                        {hasAvailableVehicle && hasAvailableSeats ? (
+                          <button
+                            onClick={() =>
+                              handleBookNowClick(
+                                route,
+                                timeSlot,
+                                journeyDateToUse
+                              )
+                            }
+                            className={`flex items-center justify-center gap-1 px-8 py-3 rounded-lg whitespace-nowrap text-md
+                              bg-indigo-600 cursor-pointer font-semibold hover:bg-indigo-700`}
+                          >
+                            {isTimePassed ? (
+                              <>
+                                Book for tomorrow
+                                <MoveRight
+                                  size={20}
+                                  className="text-white font-bold"
+                                />
+                              </>
+                            ) : (
+                              <>
+                                Book Now
+                                <MoveRight
+                                  size={20}
+                                  className="text-white font-bold"
+                                />
+                              </>
+                            )}
+                          </button>
+                        ) : hasAvailableVehicle && !hasAvailableSeats ? (
+                          <button
+                            disabled
+                            className={`flex items-center justify-center gap-1 px-8 py-3 rounded-lg whitespace-nowrap text-md
+                              bg-gray-600 cursor-not-allowed font-semibold opacity-50`}
+                          >
+                            Seats Full
+                          </button>
+                        ) : allVehiclesUnavailable ? (
+                          <button
+                            disabled
+                            className={`flex items-center justify-center gap-1 px-8 py-3 rounded-lg whitespace-nowrap text-md
+                              bg-gray-600 cursor-not-allowed font-semibold opacity-50`}
+                          >
+                            Route Unavailable
+                          </button>
+                        ) : (
+                          <button
+                            disabled
+                            className={`flex items-center justify-center gap-1 px-8 py-3 rounded-lg whitespace-nowrap text-md
+                              bg-gray-600 cursor-not-allowed font-semibold opacity-50`}
+                          >
+                            No Vehicles Available
+                          </button>
+                        )}
                     </div>
                   </div>
                 </div>

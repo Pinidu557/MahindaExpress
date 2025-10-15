@@ -15,6 +15,7 @@ export default function FuelPage() {
     date: "",
   });
   const [editingId, setEditingId] = useState(null);
+  const [errors, setErrors] = useState({});
 
   const load = async () => {
     try {
@@ -42,6 +43,39 @@ export default function FuelPage() {
     load();
     loadReport();
   }, []);
+
+  // Prevent invalid characters in numeric fields (liters, cost, odometer)
+  const handleNumberKeyDown = (e, fieldName, allowDecimal = true) => {
+    const allowedKeys = [
+      'Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',
+      'Tab', 'Home', 'End', 'Enter'
+    ];
+    
+    if (allowedKeys.includes(e.key)) return;
+    if (/^[0-9]$/.test(e.key)) return;
+    if (allowDecimal && e.key === '.' && !e.target.value.includes('.')) return;
+    
+    e.preventDefault();
+    setErrors((prev) => ({ 
+      ...prev, 
+      [fieldName]: allowDecimal 
+        ? "Only numbers and decimal point are allowed" 
+        : "Only numbers are allowed"
+    }));
+    
+    setTimeout(() => {
+      setErrors((prev) => ({ ...prev, [fieldName]: "" }));
+    }, 3000);
+  };
+
+  const handleNumberInput = (e, fieldName) => {
+    const value = e.target.value;
+    setForm({ ...form, [fieldName]: value });
+    
+    if (errors[fieldName] && /^[0-9]*\.?[0-9]*$/.test(value)) {
+      setErrors((prev) => ({ ...prev, [fieldName]: "" }));
+    }
+  };
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -129,7 +163,7 @@ export default function FuelPage() {
 
   return (
     <div className="min-h-screen bg-slate-900 text-white p-6">
-      <h1 className="text-2xl font-bold mb-6">Mahinda Express</h1>
+      <h1 className="text-2xl font-bold mb-6">Fuel</h1>
 
       <div className="bg-slate-800 rounded-lg p-6 mb-6 shadow-lg">
         <form onSubmit={onSubmit} className="space-y-4">
@@ -164,10 +198,16 @@ export default function FuelPage() {
               <input
                 id="liters"
                 value={form.liters}
-                onChange={(e) => setForm({ ...form, liters: e.target.value })}
+                onChange={(e) => handleNumberInput(e, 'liters')}
+                onKeyDown={(e) => handleNumberKeyDown(e, 'liters', true)}
                 placeholder="Liters"
-                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none"
+                className={`w-full px-3 py-2 bg-slate-700 border rounded-lg text-white focus:outline-none ${
+                  errors.liters ? "border-red-500" : "border-slate-600"
+                }`}
               />
+              {errors.liters && (
+                <p className="text-red-400 text-sm mt-1">{errors.liters}</p>
+              )}
             </div>
             <div>
               <div className="mb-2 text-sm font-medium text-white">
@@ -176,12 +216,16 @@ export default function FuelPage() {
               <input
                 id="costPerLiter"
                 value={form.costPerLiter}
-                onChange={(e) =>
-                  setForm({ ...form, costPerLiter: e.target.value })
-                }
+                onChange={(e) => handleNumberInput(e, 'costPerLiter')}
+                onKeyDown={(e) => handleNumberKeyDown(e, 'costPerLiter', true)}
                 placeholder="Cost per Liter"
-                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none"
+                className={`w-full px-3 py-2 bg-slate-700 border rounded-lg text-white focus:outline-none ${
+                  errors.costPerLiter ? "border-red-500" : "border-slate-600"
+                }`}
               />
+              {errors.costPerLiter && (
+                <p className="text-red-400 text-sm mt-1">{errors.costPerLiter}</p>
+              )}
             </div>
             <div>
               <div className="mb-2 text-sm font-medium text-white">
@@ -190,12 +234,16 @@ export default function FuelPage() {
               <input
                 id="totalCost"
                 value={form.totalCost}
-                onChange={(e) =>
-                  setForm({ ...form, totalCost: e.target.value })
-                }
+                onChange={(e) => handleNumberInput(e, 'totalCost')}
+                onKeyDown={(e) => handleNumberKeyDown(e, 'totalCost', true)}
                 placeholder="Total Cost"
-                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none"
+                className={`w-full px-3 py-2 bg-slate-700 border rounded-lg text-white focus:outline-none ${
+                  errors.totalCost ? "border-red-500" : "border-slate-600"
+                }`}
               />
+              {errors.totalCost && (
+                <p className="text-red-400 text-sm mt-1">{errors.totalCost}</p>
+              )}
             </div>
             <div>
               <div className="mb-2 text-sm font-medium text-white">
@@ -204,10 +252,16 @@ export default function FuelPage() {
               <input
                 id="odometer"
                 value={form.odometer}
-                onChange={(e) => setForm({ ...form, odometer: e.target.value })}
+                onChange={(e) => handleNumberInput(e, 'odometer')}
+                onKeyDown={(e) => handleNumberKeyDown(e, 'odometer', false)}
                 placeholder="Odometer"
-                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none"
+                className={`w-full px-3 py-2 bg-slate-700 border rounded-lg text-white focus:outline-none ${
+                  errors.odometer ? "border-red-500" : "border-slate-600"
+                }`}
               />
+              {errors.odometer && (
+                <p className="text-red-400 text-sm mt-1">{errors.odometer}</p>
+              )}
             </div>
             <div>
               <div className="mb-2 text-sm font-medium text-white">Date</div>

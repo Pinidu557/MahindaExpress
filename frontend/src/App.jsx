@@ -1,6 +1,4 @@
-
 import React from "react";
-
 import {
   BrowserRouter as Router,
   Routes,
@@ -8,9 +6,6 @@ import {
   NavLink,
   Navigate,
 } from "react-router-dom";
-
-import AdminLogin from "./pages/AdminLogin";
- 
 import ScrollToTop from "./components/ScrollToTop";
 // Staff Management imports
 import DashboardHirun from "./pages/DashboardHirun.jsx";
@@ -34,7 +29,6 @@ import PassengerAboutus from "./pages/PassengerAboutus";
 import Contactus from "./pages/PassengerContactus";
 import PassengerCheckout from "./pages/PassengerCheckout";
 import PassengerFaqs from "./pages/PassengerFaqs";
-import { AppContent } from "../context/AppContext";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import PassengerPayment from "./pages/PassengerPayment";
@@ -49,13 +43,46 @@ import FuelPage from "./pages/fuel";
 import ReportsPage from "./pages/reports";
 import DashboardPage from "./pages/dashboardkaveesha";
 import VehiclesPage from "./pages/VehiclesPage";
+import AdminLogin from "./pages/AdminLogin";
+import { useAdminAuth } from "./hooks/useAdminAuth";
+import ProtectedAdminRoute from "./components/ProtectedAdminRoute";
+// Import the new Finance Layout component
+import FinanceLayout from "./components/FinanceLayout"; 
+import FinanceDashboardPage from "./pages/FinanceDashboardPage"; 
+import BudgetsPage from "./pages/BudgetsPage"; 
+import PayRollPageFinance from "./pages/PayRollPageFinance"; 
+import LoansPage from "./pages/LoansPage"; 
+import AdvancePage from "./pages/AdvancePage"; 
+import SalaryForm from "./pages/SalaryForm.jsx";
+import SalarySlipView from "./pages/SalarySlipView.jsx";
+import ChatBot from "./components/ChatBot.jsx";
 
 // Layout component for admin dashboard
 const Layout = ({ children }) => {
+  const { adminData, logout } = useAdminAuth();
+  // Check if we're on the maintenance page
+  const isMaintenancePage = window.location.pathname === "/maintenance";
+
+  const handleLogout = async () => {
+    if (window.confirm("Are you sure you want to logout?")) {
+      await logout();
+    }
+  };
+
   return (
     <div className="flex min-h-screen bg-slate-900">
       <aside className="w-64 bg-blue-900 text-white p-4 space-y-4">
         <div className="text-lg font-bold">Mahinda Express</div>
+
+        {/* Admin Info - Hidden on maintenance page */}
+        {adminData && !isMaintenancePage && (
+          <div className="bg-blue-800 p-3 rounded-lg">
+            <p className="text-sm text-blue-200">Welcome,</p>
+            <p className="font-semibold">{adminData.name}</p>
+            <p className="text-xs text-blue-300">{adminData.email}</p>
+          </div>
+        )}
+
         <nav className="space-y-1">
           <NavLink
             to="/dashboard-admin"
@@ -118,6 +145,31 @@ const Layout = ({ children }) => {
             Main Dashboard
           </NavLink>
         </nav>
+
+        {/* Logout Button - Hidden on maintenance page */}
+        {!isMaintenancePage && (
+          <div className="pt-4 border-t border-blue-700">
+            <button
+              onClick={handleLogout}
+              className="w-full px-3 py-2 text-left rounded hover:bg-red-600 transition-colors duration-200 flex items-center gap-2"
+            >
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                />
+              </svg>
+              Logout
+            </button>
+          </div>
+        )}
       </aside>
       <main className="flex-1 p-6">{children}</main>
     </div>
@@ -149,12 +201,7 @@ const NotFound = () => (
 
 // Main App component
 function App() {
-  const { isLoggedin } = useContext(AppContent);
   return (
-    <>
-      <Routes>
-        {/* Passenger routes */}
-
     <div>
       <ToastContainer
         position="top-right"
@@ -169,44 +216,26 @@ function App() {
         theme="colored"
       />
       <ScrollToTop />
+      <ChatBot />
       <Routes>
         {/* Passenger Routes */}
-
         <Route path="/" element={<PassengerHome />} />
         <Route path="/login" element={<PassengerLogin />} />
         <Route path="/email-verify" element={<PassengerEmailVerify />} />
         <Route path="/reset-password" element={<PassengerRestPassword />} />
         <Route path="/journeys" element={<PassengerJourney />} />
-        <Route path="/aboutus" element={<PassengerAboutus />} />
+        <Route path="aboutus" element={<PassengerAboutus />} />
         <Route path="/contactus" element={<Contactus />} />
         <Route path="/journeys/checkout" element={<PassengerCheckout />} />
         <Route path="/faqs" element={<PassengerFaqs />} />
-
-
-        {/* Admin login page - public */}
-        <Route path="/admin/login" element={<AdminLogin />} />
-
-        {/* Protected admin routes */}
         <Route
           path="/dashboard"
-          element={isLoggedin ? <Dashboard /> : <Navigate to="/admin/login" />}
-        />
-        <Route
-          path="/routes"
-          element={isLoggedin ? <RoutesPage /> : <Navigate to="/admin/login" />}
-        />
-        <Route
-          path="/vehicles"
           element={
-            isLoggedin ? <VehiclesPage /> : <Navigate to="/admin/login" />
+            <ProtectedAdminRoute>
+              <Dashboard />
+            </ProtectedAdminRoute>
           }
         />
-      </Routes>
-
-      <ToastContainer position="top-right" autoClose={3000} />
-    </>
-
-        <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/routes" element={<RoutesPage />} />
         <Route path="/vehicles" element={<VehiclesPage />} />
         <Route
@@ -225,45 +254,58 @@ function App() {
         <Route path="/booking/:bookingId" element={<BookingDetails />} />
         <Route path="/user-management" element={<UserManagement />} />
 
+        {/* Admin Login Route */}
+        <Route path="/admin/login" element={<AdminLogin />} />
+
         {/* Admin Routes */}
         <Route
           path="/dashboard-admin"
           element={
-            <Layout>
-              <DashboardPage />
-            </Layout>
+            <ProtectedAdminRoute>
+              <Layout>
+                <DashboardPage />
+              </Layout>
+            </ProtectedAdminRoute>
           }
         />
         <Route
           path="/parts"
           element={
-            <Layout>
-              <PartsPage />
-            </Layout>
+            <ProtectedAdminRoute>
+              <Layout>
+                <PartsPage />
+              </Layout>
+            </ProtectedAdminRoute>
           }
         />
         <Route
           path="/maintenance"
           element={
-            <Layout>
-              <MaintenancePage />
-            </Layout>
+            <ProtectedAdminRoute>
+              <Layout>
+                <MaintenancePage />
+              </Layout>
+            </ProtectedAdminRoute>
           }
         />
         <Route
           path="/fuel"
           element={
-            <Layout>
-              <FuelPage />
-            </Layout>
+            <ProtectedAdminRoute>
+              <Layout>
+                <FuelPage />
+              </Layout>
+            </ProtectedAdminRoute>
           }
         />
         <Route
           path="/reports"
           element={
-            <Layout>
-              <ReportsPage />
-            </Layout>
+            <ProtectedAdminRoute>
+              <Layout>
+                <ReportsPage />
+              </Layout>
+            </ProtectedAdminRoute>
           }
         />
 
@@ -340,12 +382,89 @@ function App() {
             </StaffLayout>
           }
         />
+        {/* --- START: Finance Management Routes --- */}
+        <Route
+          path="/finance-dashboard"
+          element={
+            <ProtectedAdminRoute>
+              <FinanceLayout>
+                <FinanceDashboardPage />
+              </FinanceLayout>
+            </ProtectedAdminRoute>
+          }
+        />
+        <Route
+          path="/finance/budgets"
+          element={
+            <ProtectedAdminRoute>
+              <FinanceLayout>
+                <BudgetsPage />
+              </FinanceLayout>
+            </ProtectedAdminRoute>
+          }
+        />
+        <Route
+          path="/finance/payroll"
+          element={
+            <ProtectedAdminRoute>
+              {/* Note: PayrollPage is already defined for Staff. 
+                   We are using PayRollPageFinance for the Finance module's payroll view. */}
+              <FinanceLayout>
+                <PayRollPageFinance />
+              </FinanceLayout>
+            </ProtectedAdminRoute>
+          }
+        />
+        <Route
+          path="/finance/loans"
+          element={
+            <ProtectedAdminRoute>
+              <FinanceLayout>
+                <LoansPage />
+              </FinanceLayout>
+            </ProtectedAdminRoute>
+          }
+        />
+        <Route
+          path="/finance/advance"
+          element={
+            <ProtectedAdminRoute>
+              <FinanceLayout>
+                <AdvancePage />
+              </FinanceLayout>
+            </ProtectedAdminRoute>
+          }
+        />
+
+        <Route
+          path="/salary-form/:salaryId?" // Optional ID parameter for Update/Edit
+          element={
+            
+              <FinanceLayout>
+                <SalaryForm />
+              </FinanceLayout>
+            
+          }
+        />
+
+        {/* NEW: Salary Slip View Route - Used to display the slip */}
+        <Route
+          path="/salary-slip-view" 
+          element={
+            <ProtectedAdminRoute>
+              <FinanceLayout>
+                <SalarySlipView />
+              </FinanceLayout>
+            </ProtectedAdminRoute>
+          }
+        />
+
+        {/* --- END: Finance Management Routes --- */}
 
         {/* 404 Route */}
         <Route path="*" element={<NotFound />} />
       </Routes>
     </div>
-
   );
 }
 

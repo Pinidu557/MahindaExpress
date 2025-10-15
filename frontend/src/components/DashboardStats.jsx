@@ -5,10 +5,10 @@ export default function DashboardStats() {
   const [stats, setStats] = useState({
     totalStaff: 0,
     presentToday: 0,
-    onLeave: 0,
     totalBuses: 0,
     otHours: 0,
-    noPayLeaves: 0
+    noPayLeaves: 0,
+    maintenanceCompletedThisMonth: 0
   });
   const [loading, setLoading] = useState(true);
 
@@ -16,6 +16,7 @@ export default function DashboardStats() {
     const fetchStats = async () => {
       try {
         setLoading(true);
+        // Fetch staff data
         const response = await api.get('/staff');
         const staffData = response.data;
         
@@ -43,13 +44,37 @@ export default function DashboardStats() {
           return sum + (isNaN(value) ? 0 : value);
         }, 0);
         
+        // Fetch maintenance data for completed maintenance this month
+        let maintenanceCompletedThisMonth = 0;
+        try {
+          const maintenanceResponse = await api.get('/maintenance');
+          const maintenanceData = maintenanceResponse.data;
+          
+          // Get current month and year
+          const now = new Date();
+          const month = now.getMonth();
+          const year = now.getFullYear();
+          
+          // Filter maintenance records that are completed in the current month
+          maintenanceCompletedThisMonth = maintenanceData.filter(
+            record => 
+              record.status === "completed" &&
+              record.serviceDate &&
+              new Date(record.serviceDate).getMonth() === month &&
+              new Date(record.serviceDate).getFullYear() === year
+          ).length;
+        } catch (maintError) {
+          console.error('Error fetching maintenance data:', maintError);
+          // Continue with other stats even if maintenance data fails
+        }
+        
         setStats({
           totalStaff: staffData.length,
           presentToday: presentToday,
-          onLeave: staffData.length - presentToday,
           totalBuses: uniqueBuses.size,
           otHours,
-          noPayLeaves
+          noPayLeaves,
+          maintenanceCompletedThisMonth
         });
       } catch (error) {
         console.error('Error fetching stats:', error);
@@ -94,20 +119,20 @@ export default function DashboardStats() {
       textColor: 'text-green-400'
     },
     {
-      title: 'On Leave',
-      value: stats.onLeave,
-      icon: '🏠',
-      color: 'warning',
-      bgColor: 'bg-orange-900',
-      textColor: 'text-orange-400'
-    },
-    {
       title: 'Active Buses',
       value: stats.totalBuses,
       icon: '🚌',
       color: 'accent',
       bgColor: 'bg-purple-900',
       textColor: 'text-purple-400'
+    },
+    {
+      title: 'Maintenance Completed',
+      value: stats.maintenanceCompletedThisMonth,
+      icon: '🔧',
+      color: 'info',
+      bgColor: 'bg-green-800',
+      textColor: 'text-green-400'
     },
     {
       title: 'OT Hours',

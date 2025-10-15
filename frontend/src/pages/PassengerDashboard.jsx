@@ -423,11 +423,11 @@ const PassengerDashboard = () => {
                                       : booking.status === "confirmed"
                                       ? "bg-blue-900 text-blue-300"
                                       : booking.status === "pending"
-                                      ? "bg-orange-600 text-white"
+                                      ? "bg-orange-700 text-white"
                                       : booking.status === "rejected"
                                       ? "bg-gradient-to-r from-red-600 to-red-700 text-white"
                                       : booking.status === "cancelled"
-                                      ? "bg-red-900 text-red-300"
+                                      ? "bg-red-800 text-white"
                                       : "bg-yellow-900 text-yellow-300"
                                   }`}
                                 >

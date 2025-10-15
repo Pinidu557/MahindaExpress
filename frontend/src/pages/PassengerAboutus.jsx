@@ -57,23 +57,25 @@ const PassengerAboutus = () => {
                   className="rounded-xl shadow-blue-800 shadow-sm "
                 />
               </div>
-              <p className="text-gray-300 mt-6 text-md md:w-1/2  leading-6">
+              <div className="text-gray-300 mt-6 text-md md:w-1/2  leading-6">
                 <h2 className="text-4xl text-white mb-3 font-medium">
                   Who We Are
                 </h2>
-                Mahinda Express has grown into a trusted name in Sri Lanka’s
-                passenger transport sector, beginning its journey with a single
-                bus serving the Colombo – Anuradhapura route. Over the years,
-                the company has expanded steadily, now operating a modern fleet
-                comprising Super Luxury coaches, Luxury coaches, and Standard
-                passenger buses. Guided by Mr. Mahinda’s dedication to quality
-                and innovation, Mahinda Express remains committed to offering
-                safe, reliable, and comfortable travel experiences. From modest
-                origins, the company has become a hallmark of service
-                excellence, continuously focusing on customer satisfaction and
-                delivering diverse, high-standard mobility solutions across Sri
-                Lanka.
-              </p>
+                <p>
+                  Mahinda Express has grown into a trusted name in Sri Lanka's
+                  passenger transport sector, beginning its journey with a single
+                  bus serving the Colombo – Anuradhapura route. Over the years,
+                  the company has expanded steadily, now operating a modern fleet
+                  comprising Super Luxury coaches, Luxury coaches, and Standard
+                  passenger buses. Guided by Mr. Mahinda's dedication to quality
+                  and innovation, Mahinda Express remains committed to offering
+                  safe, reliable, and comfortable travel experiences. From modest
+                  origins, the company has become a hallmark of service
+                  excellence, continuously focusing on customer satisfaction and
+                  delivering diverse, high-standard mobility solutions across Sri
+                  Lanka.
+                </p>
+              </div>
             </div>
           </div>
           {/* Content Section */}
@@ -82,10 +84,10 @@ const PassengerAboutus = () => {
             <div className="flex flex-col md:flex-row gap-8 items-center">
               {/* Left Text */}
               <div className="md:w-1/2">
+                <h2 className="text-4xl  mb-12  text-white font-medium">
+                  Your Journey, Our Mission
+                </h2>
                 <p className="text-xl text-white mb-4">
-                  <h2 className="text-4xl  mb-12  text-white font-medium">
-                    Your Journey, Our Mission
-                  </h2>
                   Welcome aboard Mahinda Express – your ultimate solution for
                   swift and effortless public transit seat bookings across Sri
                   Lanka!

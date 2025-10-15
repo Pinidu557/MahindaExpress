@@ -1,8 +1,9 @@
 import express from "express";
-import contactUs from "../controllers/contacsController.js";
+import contactUs, { getContactMessages } from "../controllers/contacsController.js";
 
 const contactRouter = express.Router();
 
 contactRouter.post("/contactus", contactUs);
+contactRouter.get("/", getContactMessages);
 
 export default contactRouter;

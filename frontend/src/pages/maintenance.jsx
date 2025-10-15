@@ -7,6 +7,8 @@ export default function MaintenancePage() {
   const [records, setRecords] = useState([]);
   const [vehicles, setVehicles] = useState([]);
   const [parts, setParts] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filteredRecords, setFilteredRecords] = useState([]);
   const [reminders, setReminders] = useState(null);
   const [report, setReport] = useState(null);
   const [form, setForm] = useState({
@@ -19,11 +21,12 @@ export default function MaintenancePage() {
     mileageAtService: "",
     nextServiceDate: "",
     nextServiceMileage: "",
-    status: "pending",
+    status: "Under Maintenance",
     partsUsed: [],
   });
   const [editingId, setEditingId] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState({});
 
   const load = async () => {
     try {
@@ -57,6 +60,109 @@ export default function MaintenancePage() {
     load();
     loadMeta();
   }, []);
+
+  // Filter records when searchTerm or records change
+  useEffect(() => {
+    if (!searchTerm.trim()) {
+      setFilteredRecords(records);
+      return;
+    }
+
+    const term = searchTerm.toLowerCase();
+    const filtered = records.filter(
+      (record) =>
+        record.vehicleNumber?.toLowerCase().includes(term) ||
+        record.serviceType?.toLowerCase().includes(term) ||
+        record.mechanicId?.toLowerCase().includes(term) ||
+        record.notes?.toLowerCase().includes(term) ||
+        record.status?.toLowerCase().includes(term)
+    );
+
+    setFilteredRecords(filtered);
+  }, [searchTerm, records]);
+
+  // Prevent invalid characters in mechanic name field
+  const handleMechanicNameKeyDown = (e) => {
+    const allowedKeys = [
+      'Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',
+      'Tab', 'Home', 'End', 'Enter'
+    ];
+    
+    if (allowedKeys.includes(e.key)) return;
+    if (/^[a-zA-Z]$/.test(e.key)) return;
+    if (e.key === ' ' || e.key === '-' || e.key === "'") return;
+    
+    e.preventDefault();
+    if (/^[0-9]$/.test(e.key)) {
+      setErrors((prev) => ({ ...prev, mechanicId: "Numbers are not allowed in mechanic name" }));
+    } else {
+      setErrors((prev) => ({ ...prev, mechanicId: "Special characters are not allowed in mechanic name" }));
+    }
+    
+    setTimeout(() => {
+      setErrors((prev) => ({ ...prev, mechanicId: "" }));
+    }, 3000);
+  };
+
+  const handleMechanicNameInput = (e) => {
+    const value = e.target.value;
+    setForm({ ...form, mechanicId: value });
+    
+    if (errors.mechanicId && /^[a-zA-Z\s'-]*$/.test(value)) {
+      setErrors((prev) => ({ ...prev, mechanicId: "" }));
+    }
+  };
+
+  // Prevent invalid characters in numeric fields (cost, mileage)
+  const handleNumberKeyDown = (e, fieldName, allowDecimal = true) => {
+    const allowedKeys = [
+      'Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',
+      'Tab', 'Home', 'End', 'Enter'
+    ];
+    
+    if (allowedKeys.includes(e.key)) return;
+    if (/^[0-9]$/.test(e.key)) return;
+    if (allowDecimal && e.key === '.' && !e.target.value.includes('.')) return;
+    
+    e.preventDefault();
+    setErrors((prev) => ({ 
+      ...prev, 
+      [fieldName]: allowDecimal 
+        ? "Only numbers and decimal point are allowed" 
+        : "Only numbers are allowed"
+    }));
+    
+    setTimeout(() => {
+      setErrors((prev) => ({ ...prev, [fieldName]: "" }));
+    }, 3000);
+  };
+
+  const handleNumberInput = (e, fieldName) => {
+    const value = e.target.value;
+    setForm({ ...form, [fieldName]: value });
+    
+    if (errors[fieldName] && /^[0-9]*\.?[0-9]*$/.test(value)) {
+      setErrors((prev) => ({ ...prev, [fieldName]: "" }));
+    }
+  };
+
+  // Prevent invalid characters in parts quantity
+  const handlePartQtyKeyDown = (e) => {
+    const allowedKeys = [
+      'Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',
+      'Tab', 'Home', 'End', 'Enter'
+    ];
+    
+    if (allowedKeys.includes(e.key)) return;
+    if (/^[0-9]$/.test(e.key)) return;
+    
+    e.preventDefault();
+    setErrors((prev) => ({ ...prev, partQty: "Only numbers are allowed for quantity" }));
+    
+    setTimeout(() => {
+      setErrors((prev) => ({ ...prev, partQty: "" }));
+    }, 3000);
+  };
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -174,7 +280,7 @@ export default function MaintenancePage() {
         mileageAtService: "",
         nextServiceDate: "",
         nextServiceMileage: "",
-        status: "pending",
+        status: "Under Maintenance",
         partsUsed: [],
       });
       setEditingId(null);
@@ -204,7 +310,7 @@ export default function MaintenancePage() {
       mileageAtService: r.mileageAtService ?? "",
       nextServiceDate: r.nextServiceDate ? r.nextServiceDate.slice(0, 10) : "",
       nextServiceMileage: r.nextServiceMileage ?? "",
-      status: r.status || "pending",
+      status: r.status || "Under Maintenance",
       partsUsed: (r.partsUsed || []).map((p) => ({
         part: p.part?._id || "",
         qty: p.qty ?? 1,
@@ -327,12 +433,16 @@ export default function MaintenancePage() {
               <input
                 type="text"
                 value={form.mechanicId}
-                onChange={(e) =>
-                  setForm({ ...form, mechanicId: e.target.value })
-                }
+                onChange={handleMechanicNameInput}
+                onKeyDown={handleMechanicNameKeyDown}
                 placeholder="Mechanic Name"
-                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none"
+                className={`w-full px-3 py-2 bg-slate-700 border rounded-lg text-white focus:outline-none ${
+                  errors.mechanicId ? "border-red-500" : "border-slate-600"
+                }`}
               />
+              {errors.mechanicId && (
+                <p className="text-red-400 text-sm mt-1">{errors.mechanicId}</p>
+              )}
             </div>
 
             <div>
@@ -342,12 +452,16 @@ export default function MaintenancePage() {
               <input
                 type="text"
                 value={form.serviceCost}
-                onChange={(e) =>
-                  setForm({ ...form, serviceCost: e.target.value })
-                }
+                onChange={(e) => handleNumberInput(e, 'serviceCost')}
+                onKeyDown={(e) => handleNumberKeyDown(e, 'serviceCost', true)}
                 placeholder="Service Cost"
-                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none"
+                className={`w-full px-3 py-2 bg-slate-700 border rounded-lg text-white focus:outline-none ${
+                  errors.serviceCost ? "border-red-500" : "border-slate-600"
+                }`}
               />
+              {errors.serviceCost && (
+                <p className="text-red-400 text-sm mt-1">{errors.serviceCost}</p>
+              )}
             </div>
 
             <div>
@@ -357,12 +471,16 @@ export default function MaintenancePage() {
               <input
                 type="text"
                 value={form.mileageAtService}
-                onChange={(e) =>
-                  setForm({ ...form, mileageAtService: e.target.value })
-                }
+                onChange={(e) => handleNumberInput(e, 'mileageAtService')}
+                onKeyDown={(e) => handleNumberKeyDown(e, 'mileageAtService', false)}
                 placeholder="Mileage at Service"
-                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none"
+                className={`w-full px-3 py-2 bg-slate-700 border rounded-lg text-white focus:outline-none ${
+                  errors.mileageAtService ? "border-red-500" : "border-slate-600"
+                }`}
               />
+              {errors.mileageAtService && (
+                <p className="text-red-400 text-sm mt-1">{errors.mileageAtService}</p>
+              )}
             </div>
 
             <div>
@@ -390,12 +508,16 @@ export default function MaintenancePage() {
               <input
                 type="text"
                 value={form.nextServiceMileage}
-                onChange={(e) =>
-                  setForm({ ...form, nextServiceMileage: e.target.value })
-                }
+                onChange={(e) => handleNumberInput(e, 'nextServiceMileage')}
+                onKeyDown={(e) => handleNumberKeyDown(e, 'nextServiceMileage', false)}
                 placeholder="Next Service Mileage"
-                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none"
+                className={`w-full px-3 py-2 bg-slate-700 border rounded-lg text-white focus:outline-none ${
+                  errors.nextServiceMileage ? "border-red-500" : "border-slate-600"
+                }`}
               />
+              {errors.nextServiceMileage && (
+                <p className="text-red-400 text-sm mt-1">{errors.nextServiceMileage}</p>
+              )}
             </div>
 
             <div>
@@ -405,11 +527,11 @@ export default function MaintenancePage() {
                 onChange={(e) => setForm({ ...form, status: e.target.value })}
                 className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none"
               >
-                <option value="pending" className="bg-slate-800">
-                  Pending
+                <option value="Under Maintenance" className="bg-slate-800">
+                  Under Maintenance
                 </option>
-                <option value="completed" className="bg-slate-800">
-                  Completed
+                <option value="Available" className="bg-slate-800">
+                  Available
                 </option>
               </select>
             </div>
@@ -457,8 +579,11 @@ export default function MaintenancePage() {
                     type="text"
                     value={row.qty}
                     onChange={(e) => updatePartRow(idx, "qty", e.target.value)}
+                    onKeyDown={handlePartQtyKeyDown}
                     placeholder="Quantity"
-                    className="px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none text-sm"
+                    className={`px-3 py-2 bg-slate-700 border rounded-lg text-white focus:outline-none text-sm ${
+                      errors.partQty ? "border-red-500" : "border-slate-600"
+                    }`}
                   />
                   <button
                     type="button"
@@ -470,6 +595,9 @@ export default function MaintenancePage() {
                 </div>
               ))}
             </div>
+            {errors.partQty && (
+              <p className="text-red-400 text-sm mt-2">{errors.partQty}</p>
+            )}
 
             <button
               type="button"
@@ -544,6 +672,65 @@ export default function MaintenancePage() {
         </div>
       )}
 
+      {/* Search Bar */}
+      <div className="bg-slate-800 rounded-lg p-4 mb-4 shadow-lg">
+        <div className="flex items-center">
+          <div className="relative w-full">
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search by vehicle, service type, mechanic or status..."
+              className="w-full pl-10 pr-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
+            />
+            <div className="absolute left-3 top-2.5">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5 text-gray-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+            </div>
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm("")}
+                className="absolute right-3 top-2.5 text-gray-400 hover:text-white"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            )}
+          </div>
+        </div>
+        {searchTerm && (
+          <div className="mt-2 text-sm text-gray-400">
+            Found {filteredRecords.length}{" "}
+            {filteredRecords.length === 1 ? "record" : "records"} matching "
+            {searchTerm}"
+          </div>
+        )}
+      </div>
+
       <div className="bg-slate-800 rounded-lg overflow-hidden mb-6 shadow-lg">
         <table className="w-full text-sm text-white">
           <thead className="bg-slate-700 text-left">
@@ -557,17 +744,21 @@ export default function MaintenancePage() {
             </tr>
           </thead>
           <tbody>
-            {records.length === 0 ? (
+            {filteredRecords.length === 0 ? (
               <tr>
                 <td className="px-4 py-8 text-center text-gray-400" colSpan="6">
                   <div className="flex flex-col items-center gap-2">
                     <Wrench className="h-10 w-10 text-gray-500" />
-                    <span>No maintenance records found</span>
+                    <span>
+                      {searchTerm
+                        ? "No matching records found"
+                        : "No maintenance records found"}
+                    </span>
                   </div>
                 </td>
               </tr>
             ) : (
-              records.map((record) => (
+              filteredRecords.map((record) => (
                 <tr key={record._id} className="border-b border-slate-700">
                   <td className="px-4 py-3">{record.vehicleNumber}</td>
                   <td className="px-4 py-3">

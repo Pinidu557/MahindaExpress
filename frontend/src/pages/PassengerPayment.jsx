@@ -220,6 +220,7 @@ const PassengerPayment = () => {
           }
         } catch (error) {
           console.error("Error fetching booking details:", error);
+          toast.error("Failed to fetch booking details");
         }
       }
       setIsLoading(false);

@@ -227,9 +227,69 @@ const BookingDetails = () => {
         </button>
 
         <div className="bg-slate-800 rounded-xl p-6 shadow-lg">
-          <h1 className="text-2xl font-bold mb-6 pb-4 border-b border-slate-700">
-            Booking Details
-          </h1>
+          <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-700">
+            <h1 className="text-2xl font-bold">Booking Details</h1>
+            
+            {/* Booking Status Button */}
+            <button
+              onClick={() => {
+                if (booking?.status === "pending") {
+                  // For pending bookings, redirect to payment page
+                  navigate(`/journeys/checkout/payment?booking_id=${bookingId}`);
+                } else if (booking?.status === "cancelled") {
+                  // For cancelled bookings, show message or redirect to booking page
+                  alert("This booking has been cancelled. Please make a new booking.");
+                  navigate("/passengerDashboard");
+                } else {
+                  // For other statuses, redirect to payment success page
+                  navigate(`/journeys/checkout/payment/payment-success?booking_id=${bookingId}&payment_method=${booking?.paymentMethod || 'card'}`);
+                }
+              }}
+              className={`cursor-pointer px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 flex items-center gap-2 ${
+                booking?.status === "paid" 
+                  ? "bg-green-600 hover:bg-green-700 text-white" 
+                  : booking?.status === "pending_verification"
+                  ? "bg-yellow-600 hover:bg-yellow-700 text-white"  
+                  : booking?.status === "rejected"
+                  ? "bg-red-600 hover:bg-red-700 text-white"
+                  : booking?.status === "cancelled"
+                  ? "bg-gray-600 hover:bg-gray-700 text-white"
+                  : booking?.status === "pending"
+                  ? "bg-orange-600 hover:bg-orange-700 text-white"
+                  : "bg-blue-600 hover:bg-blue-700 text-white"
+              }`}
+            >
+              <div className={`w-2 h-2 rounded-full ${
+                booking?.status === "paid" 
+                  ? "bg-green-300" 
+                  : booking?.status === "pending_verification"
+                  ? "bg-yellow-300"
+                  : booking?.status === "rejected"
+                  ? "bg-red-300"
+                  : booking?.status === "cancelled"
+                  ? "bg-gray-300"
+                  : booking?.status === "pending"
+                  ? "bg-orange-300"
+                  : "bg-blue-300"
+              }`}></div>
+              <span>
+                {booking?.status === "paid" 
+                  ? "Payment Confirmed" 
+                  : booking?.status === "pending_verification"
+                  ? "Pending Verification"
+                  : booking?.status === "rejected"
+                  ? "Payment Rejected"
+                  : booking?.status === "cancelled"
+                  ? "Booking Cancelled"
+                  : booking?.status === "pending"
+                  ? "Complete Payment"
+                  : "View Status"}
+              </span>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
 
           {isLoading ? (
             <div className="py-20 flex justify-center">

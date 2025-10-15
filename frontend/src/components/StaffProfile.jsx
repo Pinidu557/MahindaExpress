@@ -8,6 +8,7 @@ export default function StaffProfile() {
   const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('Personal Info');
+  const [payrollErrors, setPayrollErrors] = useState({});
 
   useEffect(() => {
     const fetchStaff = async () => {
@@ -27,6 +28,51 @@ export default function StaffProfile() {
 
   const handleStaffSelect = (staffMember) => {
     setSelectedStaff(staffMember);
+    setPayrollErrors({}); // Clear errors when switching staff
+  };
+
+  // Prevent invalid characters from being typed in payroll number fields
+  const handlePayrollNumberKeyDown = (e, fieldName) => {
+    // Allow: numbers, decimal point, backspace, delete, arrow keys, tab
+    const allowedKeys = [
+      'Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',
+      'Tab', 'Home', 'End', 'Enter'
+    ];
+    
+    // Check if it's an allowed special key
+    if (allowedKeys.includes(e.key)) {
+      return; // Allow these keys
+    }
+    
+    // Check if it's a number (0-9)
+    if (/^[0-9]$/.test(e.key)) {
+      return; // Allow numbers
+    }
+    
+    // Check if it's a decimal point (only allow one)
+    if (e.key === '.' && !e.target.value.includes('.')) {
+      return; // Allow decimal point if not already present
+    }
+    
+    // Block everything else and show error message
+    e.preventDefault();
+    setPayrollErrors((prev) => ({ ...prev, [fieldName]: "Only numbers and decimal point are allowed" }));
+    
+    // Clear error after 3 seconds
+    setTimeout(() => {
+      setPayrollErrors((prev) => ({ ...prev, [fieldName]: "" }));
+    }, 3000);
+  };
+
+  // Handle payroll number input change
+  const handlePayrollNumberInput = (e, fieldName) => {
+    const value = e.target.value;
+    setSelectedStaff({ ...selectedStaff, [fieldName]: Number(value) || 0 });
+    
+    // Clear error if user is typing valid characters
+    if (payrollErrors[fieldName] && /^[0-9]*\.?[0-9]*$/.test(value)) {
+      setPayrollErrors((prev) => ({ ...prev, [fieldName]: "" }));
+    }
   };
 
   if (loading) {
@@ -180,56 +226,92 @@ export default function StaffProfile() {
                   <div className="form-group">
                     <label className="block text-sm font-medium text-slate-300 mb-2">Basic Salary</label>
                     <input
-                      type="number"
+                      type="text"
                       value={selectedStaff.basicSalary || 0}
-                      onChange={(e) => setSelectedStaff({ ...selectedStaff, basicSalary: Number(e.target.value) })}
-                      className="bg-slate-600 border border-slate-500 text-slate-200 rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      onChange={(e) => handlePayrollNumberInput(e, 'basicSalary')}
+                      onKeyDown={(e) => handlePayrollNumberKeyDown(e, 'basicSalary')}
+                      className={`bg-slate-600 border text-slate-200 rounded px-3 py-2 w-full focus:outline-none focus:ring-2 ${
+                        payrollErrors.basicSalary ? "border-red-500 focus:ring-red-500" : "border-slate-500 focus:ring-blue-500"
+                      }`}
                     />
+                    {payrollErrors.basicSalary && (
+                      <p className="text-red-400 text-sm mt-1">{payrollErrors.basicSalary}</p>
+                    )}
                   </div>
                   <div className="form-group">
                     <label className="block text-sm font-medium text-slate-300 mb-2">Allowances</label>
                     <input
-                      type="number"
+                      type="text"
                       value={selectedStaff.allowances || 0}
-                      onChange={(e) => setSelectedStaff({ ...selectedStaff, allowances: Number(e.target.value) })}
-                      className="bg-slate-600 border border-slate-500 text-slate-200 rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      onChange={(e) => handlePayrollNumberInput(e, 'allowances')}
+                      onKeyDown={(e) => handlePayrollNumberKeyDown(e, 'allowances')}
+                      className={`bg-slate-600 border text-slate-200 rounded px-3 py-2 w-full focus:outline-none focus:ring-2 ${
+                        payrollErrors.allowances ? "border-red-500 focus:ring-red-500" : "border-slate-500 focus:ring-blue-500"
+                      }`}
                     />
+                    {payrollErrors.allowances && (
+                      <p className="text-red-400 text-sm mt-1">{payrollErrors.allowances}</p>
+                    )}
                   </div>
                   <div className="form-group">
                     <label className="block text-sm font-medium text-slate-300 mb-2">Bonus</label>
                     <input
-                      type="number"
+                      type="text"
                       value={selectedStaff.bonus || 0}
-                      onChange={(e) => setSelectedStaff({ ...selectedStaff, bonus: Number(e.target.value) })}
-                      className="bg-slate-600 border border-slate-500 text-slate-200 rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      onChange={(e) => handlePayrollNumberInput(e, 'bonus')}
+                      onKeyDown={(e) => handlePayrollNumberKeyDown(e, 'bonus')}
+                      className={`bg-slate-600 border text-slate-200 rounded px-3 py-2 w-full focus:outline-none focus:ring-2 ${
+                        payrollErrors.bonus ? "border-red-500 focus:ring-red-500" : "border-slate-500 focus:ring-blue-500"
+                      }`}
                     />
+                    {payrollErrors.bonus && (
+                      <p className="text-red-400 text-sm mt-1">{payrollErrors.bonus}</p>
+                    )}
                   </div>
                   <div className="form-group">
                     <label className="block text-sm font-medium text-slate-300 mb-2">Reimbursements</label>
                     <input
-                      type="number"
+                      type="text"
                       value={selectedStaff.reimbursements || 0}
-                      onChange={(e) => setSelectedStaff({ ...selectedStaff, reimbursements: Number(e.target.value) })}
-                      className="bg-slate-600 border border-slate-500 text-slate-200 rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      onChange={(e) => handlePayrollNumberInput(e, 'reimbursements')}
+                      onKeyDown={(e) => handlePayrollNumberKeyDown(e, 'reimbursements')}
+                      className={`bg-slate-600 border text-slate-200 rounded px-3 py-2 w-full focus:outline-none focus:ring-2 ${
+                        payrollErrors.reimbursements ? "border-red-500 focus:ring-red-500" : "border-slate-500 focus:ring-blue-500"
+                      }`}
                     />
+                    {payrollErrors.reimbursements && (
+                      <p className="text-red-400 text-sm mt-1">{payrollErrors.reimbursements}</p>
+                    )}
                   </div>
                   <div className="form-group">
                     <label className="block text-sm font-medium text-slate-300 mb-2">Salary Advance</label>
                     <input
-                      type="number"
+                      type="text"
                       value={selectedStaff.salaryAdvance || 0}
-                      onChange={(e) => setSelectedStaff({ ...selectedStaff, salaryAdvance: Number(e.target.value) })}
-                      className="bg-slate-600 border border-slate-500 text-slate-200 rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      onChange={(e) => handlePayrollNumberInput(e, 'salaryAdvance')}
+                      onKeyDown={(e) => handlePayrollNumberKeyDown(e, 'salaryAdvance')}
+                      className={`bg-slate-600 border text-slate-200 rounded px-3 py-2 w-full focus:outline-none focus:ring-2 ${
+                        payrollErrors.salaryAdvance ? "border-red-500 focus:ring-red-500" : "border-slate-500 focus:ring-blue-500"
+                      }`}
                     />
+                    {payrollErrors.salaryAdvance && (
+                      <p className="text-red-400 text-sm mt-1">{payrollErrors.salaryAdvance}</p>
+                    )}
                   </div>
                   <div className="form-group">
                     <label className="block text-sm font-medium text-slate-300 mb-2">Loan</label>
                     <input
-                      type="number"
+                      type="text"
                       value={selectedStaff.loan || 0}
-                      onChange={(e) => setSelectedStaff({ ...selectedStaff, loan: Number(e.target.value) })}
-                      className="bg-slate-600 border border-slate-500 text-slate-200 rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      onChange={(e) => handlePayrollNumberInput(e, 'loan')}
+                      onKeyDown={(e) => handlePayrollNumberKeyDown(e, 'loan')}
+                      className={`bg-slate-600 border text-slate-200 rounded px-3 py-2 w-full focus:outline-none focus:ring-2 ${
+                        payrollErrors.loan ? "border-red-500 focus:ring-red-500" : "border-slate-500 focus:ring-blue-500"
+                      }`}
                     />
+                    {payrollErrors.loan && (
+                      <p className="text-red-400 text-sm mt-1">{payrollErrors.loan}</p>
+                    )}
                   </div>
                 </div>
                 <div className="mt-6 flex items-center justify-between">

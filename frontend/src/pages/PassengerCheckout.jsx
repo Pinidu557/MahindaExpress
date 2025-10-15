@@ -1,6 +1,7 @@
 import React, { useState, useContext, useEffect, useMemo } from "react";
 import PassengerNavbar from "../components/PassengerNavbar";
 import Footer from "../components/Footer";
+import ChatBot from "../components/ChatBot";
 import { AppContent } from "../context/AppContext";
 import axios from "axios";
 import { toast } from "react-toastify";
@@ -143,6 +144,9 @@ const SeatBooking = () => {
 
   // Track bookingId for update
   const [bookingId, setBookingId] = useState(routeData.bookingId || null);
+  
+  console.log("PassengerCheckout - routeData:", routeData);
+  console.log("PassengerCheckout - bookingId:", bookingId);
 
   // Sample seat layout (rows with seat numbers)
   const seatLayout = [
@@ -160,21 +164,32 @@ const SeatBooking = () => {
   ];
 
   const [bookedSeats, setBookedSeats] = useState([]);
+  const [bookedSeatGenders, setBookedSeatGenders] = useState({}); // Track gender for booked seats
   const [pendingSeats, setPendingSeats] = useState([]);
   const [pendingVerificationSeats, setPendingVerificationSeats] = useState([]);
   const [isLoadingSeats, setIsLoadingSeats] = useState(true);
 
   const [seats, setSeats] = useState([]);
+  const [seatGenders, setSeatGenders] = useState({}); // Track gender for each seat
   const [PassengerName, setPassengerName] = useState("");
   const [mobileNumber, setMobileNumber] = useState("");
   const [email, setEmail] = useState("");
   const [boardingPoint, setBoardingPoint] = useState("");
   const [dropoffPoint, setDropoffPoint] = useState("");
-  const [gender, setGender] = useState("");
   const [journeyDate, setJourneyDate] = useState("");
+  const [showGenderModal, setShowGenderModal] = useState(false);
+  const [selectedSeatForGender, setSelectedSeatForGender] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [availableStops, setAvailableStops] = useState([]);
   const [routeKey, setRouteKey] = useState("");
+
+  // Validation states
+  const [nameError, setNameError] = useState(false);
+  const [mobileError, setMobileError] = useState(false);
+  const [mobileErrorMessage, setMobileErrorMessage] = useState("");
+  const [mobileKeyError, setMobileKeyError] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [seatLimitError, setSeatLimitError] = useState(false);
 
   // Set default journey details from route data
   useEffect(() => {
@@ -210,13 +225,12 @@ const SeatBooking = () => {
       }
     }
 
-    if (routeData.journeyDate) {
-      // Set the journey date and ensure it cannot be changed
-      setJourneyDate(routeData.journeyDate);
-    } else {
-      // If no journey date is provided, use the current date
-      setJourneyDate(new Date().toISOString().split("T")[0]);
-    }
+    // Always use today's date for the journey
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    setJourneyDate(`${year}-${month}-${day}`);
 
     // If bookingId is passed from navigation, set it
     if (routeData.bookingId) {
@@ -239,11 +253,28 @@ const SeatBooking = () => {
             params: {
               routeId: routeData.routeId,
               journeyDate: journeyDate,
+              excludeBookingId: bookingId, // Exclude current booking when editing
             },
           }
         );
         if (data.success) {
-          setBookedSeats(data.bookedSeats || []);
+          console.log("Booked seats data:", data);
+          const bookedSeats = data.bookedSeats || [];
+          const bookedSeatGenders = data.bookedSeatGenders || {};
+          
+          // If no gender info is provided, assign random genders for demonstration
+          if (Object.keys(bookedSeatGenders).length === 0 && bookedSeats.length > 0) {
+            const randomGenders = {};
+            bookedSeats.forEach((seat, index) => {
+              randomGenders[seat] = index % 2 === 0 ? 'Male' : 'Female';
+            });
+            setBookedSeatGenders(randomGenders);
+            console.log("Assigned random genders:", randomGenders);
+          } else {
+            setBookedSeatGenders(bookedSeatGenders);
+          }
+          
+          setBookedSeats(bookedSeats);
           setPendingSeats(data.pendingSeats || []);
           setPendingVerificationSeats(data.pendingVerificationSeats || []);
         } else {
@@ -256,47 +287,162 @@ const SeatBooking = () => {
       }
     };
     fetchBookedSeats();
-  }, [backendUrl, routeData.routeId, journeyDate]);
+  }, [backendUrl, routeData.routeId, journeyDate, bookingId]);
 
   // Fetch booking details if bookingId exists (for update)
   useEffect(() => {
     const fetchBookingDetails = async () => {
-      if (!bookingId) return;
+      if (!bookingId) {
+        console.log("No bookingId found, skipping fetch");
+        return;
+      }
+      console.log("Fetching booking details for bookingId:", bookingId);
       try {
         const { data } = await axios.get(
           `${backendUrl}/api/bookings/${bookingId}`
         );
         if (data.success) {
+          console.log("Successfully fetched booking:", data.booking);
           setPassengerName(data.booking.passengerName);
           setMobileNumber(data.booking.mobileNumber);
           setEmail(data.booking.email);
           setSeats(data.booking.seats);
+          setSeatGenders(data.booking.seatGenders || {}); // Load seat genders
           setBoardingPoint(data.booking.boardingPoint);
           setDropoffPoint(data.booking.dropoffPoint);
-          setGender(data.booking.gender);
           setJourneyDate(
             new Date(data.booking.journeyDate).toISOString().split("T")[0]
           );
         }
       } catch (error) {
-        toast.error("Failed to fetch booking details", error.message);
+        console.error("Error fetching booking details:", error);
+        console.error("Request URL:", `${backendUrl}/api/bookings/${bookingId}`);
+        toast.error("Failed to fetch booking details");
       }
     };
     fetchBookingDetails();
   }, [bookingId, backendUrl]);
 
+  // Filter out current user's seats from pending status when editing
+  useEffect(() => {
+    if (bookingId && seats.length > 0) {
+      // Remove current user's seats from pending verification list
+      setPendingVerificationSeats(prev => 
+        prev.filter(seat => !seats.includes(seat))
+      );
+      // Also remove from pending seats list
+      setPendingSeats(prev => 
+        prev.filter(seat => !seats.includes(seat))
+      );
+    }
+  }, [bookingId, seats]);
+
+  // Helper function to get adjacent seats
+  const getAdjacentSeats = (seat) => {
+    const adjacent = [];
+    for (const row of seatLayout) {
+      const seatIndex = row.indexOf(seat);
+      if (seatIndex !== -1) {
+        // Check left and right in the same row
+        if (seatIndex > 0 && row[seatIndex - 1] !== null) {
+          adjacent.push(row[seatIndex - 1]);
+        }
+        if (seatIndex < row.length - 1 && row[seatIndex + 1] !== null) {
+          adjacent.push(row[seatIndex + 1]);
+        }
+        break;
+      }
+    }
+    return adjacent;
+  };
+
+  // Check if selecting a gender for a seat would violate adjacency rules
+  const checkGenderAdjacency = (seat, gender) => {
+    const adjacentSeats = getAdjacentSeats(seat);
+    const otherGender = gender === "Male" ? "Female" : "Male";
+    
+    for (const adjacentSeat of adjacentSeats) {
+      if (seats.includes(adjacentSeat) && seatGenders[adjacentSeat] === otherGender) {
+        return false; // Would create male-female adjacency
+      }
+    }
+    return true; // Safe to select
+  };
+
   // Handle seat selection
   const toggleSeat = (seat) => {
-    if (!seat || bookedSeats.includes(seat) || pendingSeats.includes(seat) || pendingVerificationSeats.includes(seat)) return;
+    if (!seat) return;
+    
+    // Allow selection of user's own seats even if they're in pending status
+    const isUserOwnSeat = seats.includes(seat);
+    
+    if (
+      bookedSeats.includes(seat) ||
+      (!isUserOwnSeat && (pendingSeats.includes(seat) || pendingVerificationSeats.includes(seat)))
+    )
+      return;
+      
     if (seats.includes(seat)) {
+      // Remove seat and its gender
       setSeats(seats.filter((s) => s !== seat));
+      const newSeatGenders = { ...seatGenders };
+      delete newSeatGenders[seat];
+      setSeatGenders(newSeatGenders);
+      // Clear seat limit error when removing seats
+      if (seatLimitError) setSeatLimitError(false);
     } else {
-      setSeats([...seats, seat]);
+      // Check seat limit before adding new seat
+      if (seats.length >= 6) {
+        setSeatLimitError(true);
+        toast.error("Maximum 6 seats can be selected");
+        return;
+      }
+      // Add seat and show gender selection modal
+      setSelectedSeatForGender(seat);
+      setShowGenderModal(true);
     }
+  };
+
+  // Handle gender selection for a seat
+  const handleGenderSelection = (gender) => {
+    if (!selectedSeatForGender) return;
+
+    if (!checkGenderAdjacency(selectedSeatForGender, gender)) {
+      toast.error(`Cannot select ${gender} seat next to ${gender === "Male" ? "Female" : "Male"} seat!`);
+      return;
+    }
+
+    // Add seat with selected gender
+    setSeats([...seats, selectedSeatForGender]);
+    setSeatGenders({
+      ...seatGenders,
+      [selectedSeatForGender]: gender
+    });
+
+    setShowGenderModal(false);
+    setSelectedSeatForGender(null);
   };
 
   // Calculate total fare
   const totalFare = seats.length * (routeData.fare || 895);
+
+  // Check if all required form fields are filled
+  const isFormValid = () => {
+    return (
+      seats.length > 0 &&
+      seats.length <= 6 &&
+      PassengerName.trim() !== "" &&
+      mobileNumber.trim() !== "" &&
+      mobileNumber.length === 10 &&
+      boardingPoint.trim() !== "" &&
+      dropoffPoint.trim() !== "" &&
+      !nameError &&
+      !mobileError &&
+      !mobileKeyError &&
+      !emailError &&
+      !seatLimitError
+    );
+  };
 
   // Handle form submission (create or update booking)
   const onSubmieHandler = async (e) => {
@@ -316,9 +462,9 @@ const SeatBooking = () => {
         mobileNumber: mobileNumber,
         email: email || "no-email@example.com",
         seats: seats,
+        seatGenders: seatGenders, // Include seat gender information
         boardingPoint: boardingPoint,
         dropoffPoint: dropoffPoint,
-        gender: gender,
         journeyDate: new Date(journeyDate).toISOString(),
         totalFare: totalFare,
         status: "pending",
@@ -348,7 +494,10 @@ const SeatBooking = () => {
         toast.success("Booking successful! Redirecting to payment");
         setTimeout(() => {
           navigate("/journeys/checkout/payment", {
-            state: { bookingId: bookingId || data.booking._id },
+            state: { 
+              bookingId: bookingId || data.booking._id,
+              ...routeData // Include all route data
+            },
           });
         }, 1500);
       } else {
@@ -363,15 +512,18 @@ const SeatBooking = () => {
     }
   };
 
-  // Format the journey date for display
-  const formattedJourneyDate = journeyDate
-    ? new Date(journeyDate).toLocaleDateString("en-US", {
-        weekday: "short",
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      })
-    : "";
+  // Format the journey date for display - always use current date
+  const getCurrentFormattedDate = () => {
+    const today = new Date();
+    return today.toLocaleDateString("en-US", {
+      weekday: "short",
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
+  
+  const formattedJourneyDate = getCurrentFormattedDate();
 
   return (
     <div className="min-h-screen bg-slate-900 text-white flex flex-col items-center justify-center">
@@ -469,14 +621,25 @@ const SeatBooking = () => {
                         className={`w-10 h-10 rounded-lg text-sm font-bold flex items-center justify-center cursor-pointer
                           ${
                             bookedSeats.includes(seat)
-                              ? "bg-red-800 cursor-not-allowed"
-                              : pendingSeats.includes(seat) || pendingVerificationSeats.includes(seat)
+                              ? bookedSeatGenders[seat] === 'Male' 
+                                ? "bg-blue-600 cursor-not-allowed" // Male booked seat - blue
+                                : bookedSeatGenders[seat] === 'Female'
+                                ? "bg-pink-600 cursor-not-allowed" // Female booked seat - pink
+                                : "bg-red-800 cursor-not-allowed" // General booked seat color
+                              : (pendingSeats.includes(seat) ||
+                                pendingVerificationSeats.includes(seat)) &&
+                                !seats.includes(seat) // Don't show as pending if it's the user's own seat
                               ? "bg-orange-600 cursor-not-allowed"
                               : seats.includes(seat)
-                              ? "bg-indigo-500"
+                              ? "bg-purple-600 hover:bg-purple-500" // User selected seats - purple
                               : "bg-green-600 hover:bg-green-500"
                           }`}
-                        disabled={bookedSeats.includes(seat) || pendingSeats.includes(seat) || pendingVerificationSeats.includes(seat)}
+                        disabled={
+                          bookedSeats.includes(seat) ||
+                          (pendingSeats.includes(seat) ||
+                          pendingVerificationSeats.includes(seat)) &&
+                          !seats.includes(seat) // Don't disable if it's the user's own seat
+                        }
                       >
                         {seat}
                       </button>
@@ -493,47 +656,180 @@ const SeatBooking = () => {
         {/* Seat Details Form */}
         <div className="bg-slate-800 p-6 rounded-2xl shadow-lg w-[35%] flex-shrink-0">
           <h2 className="text-xl font-semibold mb-4">Seat Details</h2>
-          <p className="mb-2">
-            Seats:{" "}
-            <span className="text-indigo-400 font-semibold">
-              {seats.join(", ") || "None"}
-            </span>
-          </p>
+          <div className="mb-2">
+            <div className="mb-2">
+              <p className="text-gray-300">Selected Seats:</p>
+            </div>
+            {seats.length > 0 ? (
+              <div className="space-y-1">
+                {seats.map(seat => (
+                  <div key={seat} className="flex items-center gap-2">
+                    <span className="text-indigo-400 font-semibold">Seat {seat}</span>
+                    <span className={`px-2 py-1 rounded text-xs font-medium ${
+                      seatGenders[seat] === 'Male' 
+                        ? 'bg-blue-600 text-white' 
+                        : seatGenders[seat] === 'Female'
+                        ? 'bg-pink-600 text-white'
+                        : 'bg-gray-600 text-white'
+                    }`}>
+                      {seatGenders[seat] || 'Not Selected'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <span className="text-gray-400">None</span>
+            )}
+            {seatLimitError && (
+              <p className="text-red-400 text-xs mt-2">
+                Maximum 6 seats allowed
+              </p>
+            )}
+          </div>
           <p className="mb-4">
             Total: <span className="text-green-400 font-bold">{totalFare}</span>{" "}
             LKR
           </p>
 
           <form className="flex flex-col gap-8" onSubmit={onSubmieHandler}>
-            <input
-              type="text"
-              placeholder="Passenger Name"
-              className="px-3 py-2 rounded-lg bg-slate-700 text-white placeholder-gray-400 focus:outline-none"
-              value={PassengerName}
-              onChange={(e) => setPassengerName(e.target.value)}
-              required
-            />
-            <input
-              type="text"
-              placeholder="Mobile Number"
-              className="px-3 py-2 rounded-lg bg-slate-700 text-white placeholder-gray-400 focus:outline-none"
-              value={mobileNumber}
-              onChange={(e) => setMobileNumber(e.target.value)}
-              required
-            />
+            <div className="flex flex-col w-full">
+              <input
+                type="text"
+                placeholder="Passenger Name"
+                className={`px-3 py-2 rounded-lg bg-slate-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 border ${
+                  nameError
+                    ? "border-red-500"
+                    : "border-transparent hover:border-slate-600"
+                }`}
+                value={PassengerName}
+                onChange={(e) => {
+                  // Allow only letters and spaces (no numbers or special characters)
+                  if (
+                    /^[A-Za-z\s]*$/.test(e.target.value) ||
+                    e.target.value === ""
+                  ) {
+                    setPassengerName(e.target.value);
+                    // Reset error when valid input is entered
+                    if (nameError) setNameError(false);
+                  }
+                }}
+                onKeyDown={(e) => {
+                  // Block keys that are numbers or special characters
+                  if (
+                    !/^[A-Za-z\s]$/.test(e.key) &&
+                    e.key !== "Backspace" &&
+                    e.key !== "Delete" &&
+                    e.key !== "ArrowLeft" &&
+                    e.key !== "ArrowRight" &&
+                    e.key !== "Tab"
+                  ) {
+                    setNameError(true);
+                    e.preventDefault();
+                  }
+                }}
+                required
+              />
+              {nameError && (
+                <p className="text-red-400 text-xs ml-2 mt-1">
+                  Only letters are allowed
+                </p>
+              )}
+            </div>
+            <div className="flex flex-col w-full">
+              <input
+                type="text"
+                placeholder="Mobile Number"
+                className={`px-3 py-2 rounded-lg bg-slate-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 border ${
+                  mobileError
+                    ? "border-red-500"
+                    : "border-transparent hover:border-slate-600"
+                }`}
+                value={mobileNumber}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  // Allow only numbers and limit to 10 digits
+                  if (/^[0-9]*$/.test(value) && value.length <= 10) {
+                    setMobileNumber(value);
+                    // Clear errors when valid input is entered
+                    if (mobileError) {
+                      setMobileError(false);
+                      setMobileErrorMessage("");
+                    }
+                    if (mobileKeyError) {
+                      setMobileKeyError("");
+                    }
+                  }
+                }}
+                onKeyDown={(e) => {
+                  // Show alert if user tries to type when already at 10 digits
+                  if (mobileNumber.length >= 10 && /^[0-9]$/.test(e.key)) {
+                    e.preventDefault();
+                    setMobileKeyError("Phone number cannot exceed 10 digits");
+                    return;
+                  }
+                  // Block keys that are not numbers or control keys
+                  if (
+                    !/^[0-9]$/.test(e.key) &&
+                    e.key !== "Backspace" &&
+                    e.key !== "Delete" &&
+                    e.key !== "ArrowLeft" &&
+                    e.key !== "ArrowRight" &&
+                    e.key !== "Tab"
+                  ) {
+                    e.preventDefault();
+                    setMobileKeyError("Only numbers are allowed");
+                    return;
+                  }
+                  // Clear key error when valid key is pressed
+                  if (mobileKeyError) {
+                    setMobileKeyError("");
+                  }
+                }}
+                onBlur={() => {
+                  // Validate on blur
+                  if (mobileNumber.length > 0 && mobileNumber.length !== 10) {
+                    setMobileError(true);
+                    setMobileErrorMessage("Phone number must be exactly 10 digits");
+                  }
+                }}
+                required
+              />
+              {(mobileError || mobileKeyError) && (
+                <p className="text-red-400 text-xs ml-2 mt-1">
+                  {mobileKeyError || mobileErrorMessage || "Only numbers are allowed"}
+                </p>
+              )}
+            </div>
 
-            <input
-              type="email"
-              placeholder="email address"
-              className="px-3 py-2 rounded-lg bg-slate-700 text-white placeholder-gray-400 focus:outline-none"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
+            <div className="flex flex-col w-full">
+              <input
+                type="email"
+                placeholder="Email address"
+                className={`px-3 py-2 rounded-lg bg-slate-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 border ${
+                  emailError
+                    ? "border-red-500"
+                    : "border-transparent hover:border-slate-600"
+                }`}
+                value={email}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setEmail(value);
+                  if (value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+                    setEmailError("Please enter a valid email address");
+                  } else {
+                    setEmailError("");
+                  }
+                }}
+              />
+              {emailError && (
+                <p className="text-red-400 text-xs ml-2 mt-1">{emailError}</p>
+              )}
+            </div>
             <div>
               {availableStops.length > 0 ? (
                 <>
                   <select
-                    className="w-full px-3 py-2 rounded-lg bg-slate-700 text-white placeholder-gray-400 focus:outline-none"
+                    className="w-full px-3 py-2 rounded-lg bg-slate-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 border border-transparent hover:border-slate-600"
                     value={boardingPoint}
                     onChange={(e) => {
                       setBoardingPoint(e.target.value);
@@ -557,7 +853,7 @@ const SeatBooking = () => {
                   <input
                     type="text"
                     placeholder="Select Boarding Point"
-                    className="w-full px-3 py-2 rounded-lg bg-slate-700 text-white placeholder-gray-400 focus:outline-none"
+                    className="w-full px-3 py-2 rounded-lg bg-slate-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 border border-transparent hover:border-slate-600"
                     value={boardingPoint}
                     onChange={(e) => setBoardingPoint(e.target.value)}
                     required
@@ -570,7 +866,7 @@ const SeatBooking = () => {
               {availableStops.length > 0 ? (
                 <>
                   <select
-                    className="w-full px-3 py-2 rounded-lg bg-slate-700 text-white placeholder-gray-400 focus:outline-none"
+                    className="w-full px-3 py-2 rounded-lg bg-slate-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 border border-transparent hover:border-slate-600"
                     value={dropoffPoint}
                     onChange={(e) => setDropoffPoint(e.target.value)}
                     required
@@ -608,7 +904,7 @@ const SeatBooking = () => {
                   <input
                     type="text"
                     placeholder="Select Dropoff Point"
-                    className="w-full px-3 py-2 rounded-lg bg-slate-700 text-white placeholder-gray-400 focus:outline-none"
+                    className="w-full px-3 py-2 rounded-lg bg-slate-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 border border-transparent hover:border-slate-600"
                     value={dropoffPoint}
                     onChange={(e) => setDropoffPoint(e.target.value)}
                     required
@@ -616,24 +912,12 @@ const SeatBooking = () => {
                 </>
               )}
             </div>
-            <select
-              className="px-3 py-2 rounded-lg bg-slate-700 text-white placeholder-gray-400 focus:outline-none"
-              value={gender}
-              onChange={(e) => setGender(e.target.value)}
-              required
-            >
-              <option value="" className="text-gray-400">
-                Select Gender
-              </option>
-              <option value="Male">Male</option>
-              <option value="Female">Female</option>
-            </select>
             <div>
               <input
                 disabled
                 type="date"
                 placeholder="Journey Date"
-                className="w-full px-3 py-2 rounded-lg bg-slate-700    text-white placeholder-white cursor-not-allowed focus:outline-none"
+                className="w-full px-3 py-2 rounded-lg bg-slate-700 text-white placeholder-white cursor-not-allowed focus:outline-none border border-transparent"
                 value={journeyDate}
                 onChange={(e) => setJourneyDate(e.target.value)}
                 required
@@ -644,8 +928,8 @@ const SeatBooking = () => {
             </div>
             <button
               type="submit"
-              disabled={isSubmitting || seats.length === 0}
-              className="bg-blue-600 py-2 rounded-lg font-semibold mt-3 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center"
+              disabled={isSubmitting || !isFormValid()}
+              className="bg-blue-600 py-2 rounded-lg font-semibold mt-3 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center w-full"
             >
               {isSubmitting ? (
                 <>
@@ -661,31 +945,65 @@ const SeatBooking = () => {
 
         {/* Legend */}
         <div className="grid grid-cols-1 gap-4 text-sm w-[10%] flex-shrink-0">
-          {/* <div className="flex items-center gap-2">
-            <span className="w-5 h-5 bg-pink-500 rounded"></span> Ladies Only
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="w-5 h-5 bg-blue-600 rounded"></span> Gents Only
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="w-5 h-5 bg-yellow-300 rounded"></span> Not Provided
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="w-5 h-5 bg-gray-800 rounded"></span> Booking In
-            Progress
-          </div> */}
           <div className="flex items-center gap-2">
             <span className="w-5 h-5 bg-green-600 rounded"></span> Available
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-5 h-5 bg-purple-600 rounded"></span> Selected
           </div>
           <div className="flex items-center gap-2">
             <span className="w-5 h-5 bg-orange-600 rounded"></span> Pending
           </div>
           <div className="flex items-center gap-2">
-            <span className="w-5 h-5 bg-red-800 rounded"></span> Already Booked
+            <span className="w-5 h-5 bg-blue-600 rounded"></span> Male Booked
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-5 h-5 bg-pink-600 rounded"></span> Female Booked
           </div>
         </div>
       </div>
+
+      {/* Gender Selection Modal */}
+      {showGenderModal && (
+        <div className="fixed inset-0 bg-slate-900 bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-slate-800 rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-xl font-semibold mb-4 text-center">
+              Select Gender for Seat {selectedSeatForGender}
+            </h3>
+            <p className="text-gray-400 text-sm mb-6 text-center">
+              Choose the gender for this seat. Male and female seats cannot be adjacent.
+            </p>
+            
+            <div className="flex gap-4 justify-center">
+              <button
+                onClick={() => handleGenderSelection("Male")}
+                className="cursor-pointer px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+              >
+                Male
+              </button>
+              <button
+                onClick={() => handleGenderSelection("Female")}
+                className="cursor-pointer px-6 py-3 bg-pink-600 hover:bg-pink-700 text-white rounded-lg font-medium transition-colors"
+              >
+                Female
+              </button>
+            </div>
+            
+            <button
+              onClick={() => {
+                setShowGenderModal(false);
+                setSelectedSeatForGender(null);
+              }}
+              className="w-full mt-4 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
       <Footer />
+      <ChatBot />
     </div>
   );
 };

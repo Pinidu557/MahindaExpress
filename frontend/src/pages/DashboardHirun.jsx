@@ -6,7 +6,6 @@ function DashboardHirun() {
   const [stats, setStats] = useState({
     totalStaff: 0,
     presentToday: 0,
-    onLeave: 0,
     totalBuses: 0,
   });
   const [staff, setStaff] = useState([]);
@@ -23,7 +22,6 @@ function DashboardHirun() {
           totalStaff: staffData.length,
           presentToday: staffData.filter((s) => s.attendance === "present")
             .length,
-          onLeave: staffData.filter((s) => s.attendance === "absent").length,
           totalBuses: new Set(
             staffData.map((s) => s.assignedBus).filter(Boolean)
           ).size,
@@ -114,22 +112,6 @@ function DashboardHirun() {
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-orange-900 to-orange-800 border border-orange-700 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-orange-200 mb-2">
-                  On Leave
-                </p>
-                <p className="text-4xl font-bold text-white">{stats.onLeave}</p>
-                <p className="text-xs text-orange-300 mt-1">
-                  Not available today
-                </p>
-              </div>
-              <div className="w-16 h-16 bg-orange-700 rounded-full flex items-center justify-center">
-                <span className="text-3xl">🏠</span>
-              </div>
-            </div>
-          </div>
 
           <div className="bg-gradient-to-br from-purple-900 to-purple-800 border border-purple-700 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
             <div className="flex items-center justify-between">

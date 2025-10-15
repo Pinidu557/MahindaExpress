@@ -16,6 +16,7 @@ export default function PartsPage() {
     location: "",
   });
   const [editingId, setEditingId] = useState(null);
+  const [errors, setErrors] = useState({});
 
   const load = async () => {
     try {
@@ -46,6 +47,71 @@ export default function PartsPage() {
     load();
     loadReport();
   }, []);
+
+  // Prevent invalid characters in text fields (name, category, supplier, location)
+  const handleTextKeyDown = (e, fieldName) => {
+    const allowedKeys = [
+      'Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',
+      'Tab', 'Home', 'End', 'Enter'
+    ];
+    
+    if (allowedKeys.includes(e.key)) return;
+    if (/^[a-zA-Z]$/.test(e.key)) return;
+    if (e.key === ' ' || e.key === '-' || e.key === "'") return;
+    
+    e.preventDefault();
+    if (/^[0-9]$/.test(e.key)) {
+      setErrors((prev) => ({ ...prev, [fieldName]: `Numbers are not allowed in ${fieldName}` }));
+    } else {
+      setErrors((prev) => ({ ...prev, [fieldName]: `Special characters are not allowed in ${fieldName}` }));
+    }
+    
+    setTimeout(() => {
+      setErrors((prev) => ({ ...prev, [fieldName]: "" }));
+    }, 3000);
+  };
+
+  const handleTextInput = (e, fieldName) => {
+    const value = e.target.value;
+    setForm({ ...form, [fieldName]: value });
+    
+    if (errors[fieldName] && /^[a-zA-Z\s'-]*$/.test(value)) {
+      setErrors((prev) => ({ ...prev, [fieldName]: "" }));
+    }
+  };
+
+  // Prevent invalid characters in numeric fields (cost, stockQty, minThreshold)
+  const handleNumberKeyDown = (e, fieldName, allowDecimal = true) => {
+    const allowedKeys = [
+      'Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',
+      'Tab', 'Home', 'End', 'Enter'
+    ];
+    
+    if (allowedKeys.includes(e.key)) return;
+    if (/^[0-9]$/.test(e.key)) return;
+    if (allowDecimal && e.key === '.' && !e.target.value.includes('.')) return;
+    
+    e.preventDefault();
+    setErrors((prev) => ({ 
+      ...prev, 
+      [fieldName]: allowDecimal 
+        ? "Only numbers and decimal point are allowed" 
+        : "Only numbers are allowed"
+    }));
+    
+    setTimeout(() => {
+      setErrors((prev) => ({ ...prev, [fieldName]: "" }));
+    }, 3000);
+  };
+
+  const handleNumberInput = (e, fieldName) => {
+    const value = e.target.value;
+    setForm({ ...form, [fieldName]: value });
+    
+    if (errors[fieldName] && /^[0-9]*\.?[0-9]*$/.test(value)) {
+      setErrors((prev) => ({ ...prev, [fieldName]: "" }));
+    }
+  };
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -197,11 +263,17 @@ export default function PartsPage() {
               <input
                 id="name"
                 value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                onChange={(e) => handleTextInput(e, 'name')}
+                onKeyDown={(e) => handleTextKeyDown(e, 'name')}
                 placeholder="Name"
-                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none"
+                className={`w-full px-3 py-2 bg-slate-700 border rounded-lg text-white focus:outline-none ${
+                  errors.name ? "border-red-500" : "border-slate-600"
+                }`}
                 required
               />
+              {errors.name && (
+                <p className="text-red-400 text-sm mt-1">{errors.name}</p>
+              )}
             </div>
             <div>
               <div className="mb-2 text-sm font-medium text-white">
@@ -210,10 +282,16 @@ export default function PartsPage() {
               <input
                 id="category"
                 value={form.category}
-                onChange={(e) => setForm({ ...form, category: e.target.value })}
+                onChange={(e) => handleTextInput(e, 'category')}
+                onKeyDown={(e) => handleTextKeyDown(e, 'category')}
                 placeholder="Category"
-                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none"
+                className={`w-full px-3 py-2 bg-slate-700 border rounded-lg text-white focus:outline-none ${
+                  errors.category ? "border-red-500" : "border-slate-600"
+                }`}
               />
+              {errors.category && (
+                <p className="text-red-400 text-sm mt-1">{errors.category}</p>
+              )}
             </div>
             <div>
               <div className="mb-2 text-sm font-medium text-white">
@@ -222,20 +300,32 @@ export default function PartsPage() {
               <input
                 id="supplier"
                 value={form.supplier}
-                onChange={(e) => setForm({ ...form, supplier: e.target.value })}
+                onChange={(e) => handleTextInput(e, 'supplier')}
+                onKeyDown={(e) => handleTextKeyDown(e, 'supplier')}
                 placeholder="Supplier"
-                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none"
+                className={`w-full px-3 py-2 bg-slate-700 border rounded-lg text-white focus:outline-none ${
+                  errors.supplier ? "border-red-500" : "border-slate-600"
+                }`}
               />
+              {errors.supplier && (
+                <p className="text-red-400 text-sm mt-1">{errors.supplier}</p>
+              )}
             </div>
             <div>
               <div className="mb-2 text-sm font-medium text-white">Cost</div>
               <input
                 id="cost"
                 value={form.cost}
-                onChange={(e) => setForm({ ...form, cost: e.target.value })}
+                onChange={(e) => handleNumberInput(e, 'cost')}
+                onKeyDown={(e) => handleNumberKeyDown(e, 'cost', true)}
                 placeholder="Cost"
-                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none"
+                className={`w-full px-3 py-2 bg-slate-700 border rounded-lg text-white focus:outline-none ${
+                  errors.cost ? "border-red-500" : "border-slate-600"
+                }`}
               />
+              {errors.cost && (
+                <p className="text-red-400 text-sm mt-1">{errors.cost}</p>
+              )}
             </div>
             <div>
               <div className="mb-2 text-sm font-medium text-white">
@@ -244,10 +334,16 @@ export default function PartsPage() {
               <input
                 id="stockQty"
                 value={form.stockQty}
-                onChange={(e) => setForm({ ...form, stockQty: e.target.value })}
+                onChange={(e) => handleNumberInput(e, 'stockQty')}
+                onKeyDown={(e) => handleNumberKeyDown(e, 'stockQty', false)}
                 placeholder="Stock Qty"
-                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none"
+                className={`w-full px-3 py-2 bg-slate-700 border rounded-lg text-white focus:outline-none ${
+                  errors.stockQty ? "border-red-500" : "border-slate-600"
+                }`}
               />
+              {errors.stockQty && (
+                <p className="text-red-400 text-sm mt-1">{errors.stockQty}</p>
+              )}
             </div>
             <div>
               <div className="mb-2 text-sm font-medium text-white">
@@ -256,12 +352,16 @@ export default function PartsPage() {
               <input
                 id="minThreshold"
                 value={form.minThreshold}
-                onChange={(e) =>
-                  setForm({ ...form, minThreshold: e.target.value })
-                }
+                onChange={(e) => handleNumberInput(e, 'minThreshold')}
+                onKeyDown={(e) => handleNumberKeyDown(e, 'minThreshold', false)}
                 placeholder="Min Threshold"
-                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none"
+                className={`w-full px-3 py-2 bg-slate-700 border rounded-lg text-white focus:outline-none ${
+                  errors.minThreshold ? "border-red-500" : "border-slate-600"
+                }`}
               />
+              {errors.minThreshold && (
+                <p className="text-red-400 text-sm mt-1">{errors.minThreshold}</p>
+              )}
             </div>
             <div>
               <div className="mb-2 text-sm font-medium text-white">
@@ -270,10 +370,16 @@ export default function PartsPage() {
               <input
                 id="location"
                 value={form.location}
-                onChange={(e) => setForm({ ...form, location: e.target.value })}
+                onChange={(e) => handleTextInput(e, 'location')}
+                onKeyDown={(e) => handleTextKeyDown(e, 'location')}
                 placeholder="Location"
-                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none"
+                className={`w-full px-3 py-2 bg-slate-700 border rounded-lg text-white focus:outline-none ${
+                  errors.location ? "border-red-500" : "border-slate-600"
+                }`}
               />
+              {errors.location && (
+                <p className="text-red-400 text-sm mt-1">{errors.location}</p>
+              )}
             </div>
           </div>
           <div className="pt-3">

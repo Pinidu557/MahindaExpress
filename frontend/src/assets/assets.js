@@ -20,6 +20,7 @@ import mebus from "./mebus.jpg";
 import auimg from "./auimg.jpg";
 import mission from "./mission.jpg";
 import missionfinal from "./missionfinal.jpg";
+import anu from "./anu.png";
 
 export const assets = {
   arrow_icon,
@@ -44,4 +45,5 @@ export const assets = {
   auimg,
   mission,
   missionfinal,
+  anu,
 };

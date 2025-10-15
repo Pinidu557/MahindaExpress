@@ -8,6 +8,8 @@ import {
   getAllBookings,
   cancelBooking,
   updateRefundStatus,
+  autoCancelPendingBookings,
+  triggerAutoCancellation,
 } from "../controllers/bookingController.js";
 import userAuth from "../middleware/userAuth.js";
 
@@ -19,6 +21,9 @@ bookingRouter.get("/booked-seats", getBookedSeats);
 
 // Add route for getting all bookings (for admin)
 bookingRouter.get("/all", getAllBookings); // Access via /api/bookings/all
+
+// Add route for auto-cancellation (admin only)
+bookingRouter.post("/auto-cancel", triggerAutoCancellation); // Access via /api/bookings/auto-cancel
 
 // Add route for getting user bookings with authentication - must come BEFORE /:bookingId
 bookingRouter.get("/user", userAuth, getUserBookings); // Access via /api/bookings/user
