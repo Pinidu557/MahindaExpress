@@ -206,32 +206,95 @@ const UserManagement = () => {
 
   const handleApproveTransfer = async (bookingId) => {
     try {
+      // Confirm before approving
+      if (
+        !window.confirm(
+          "Are you sure you want to approve this bank transfer? This will mark the booking as paid."
+        )
+      ) {
+        return;
+      }
+
       const { data } = await api.put(
         `/api/admin/approve-bank-transfer/${bookingId}`
       );
       if (data.success) {
-        toast.success("Bank transfer approved successfully!");
+        toast.success("Bank transfer approved successfully!", {
+          position: "top-right",
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+          theme: "colored",
+          style: { backgroundColor: "#10B981", color: "white" },
+        });
         fetchBankTransfers(); // Refresh the list
       } else {
         toast.error(data.message || "Failed to approve transfer");
       }
     } catch (error) {
       console.error("Error approving transfer:", error);
-      toast.error("Failed to approve bank transfer");
+      toast.error("Failed to approve bank transfer", {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "colored",
+        style: { backgroundColor: "#EF4444", color: "white" },
+      });
     }
   };
 
   const handleRejectTransfer = async (bookingId, reason = "") => {
     try {
+      // Ask for rejection reason
+      const rejectionReason = window.prompt(
+        "Please provide a reason for rejecting this bank transfer:",
+        reason
+      );
+
+      // If user cancels the prompt, return
+      if (rejectionReason === null) {
+        return;
+      }
+
+      // Confirm before rejecting
+      if (
+        !window.confirm(
+          "Are you sure you want to reject this bank transfer? This will mark the booking as rejected."
+        )
+      ) {
+        return;
+      }
+
       const { data } = await api.put(
         `/api/admin/reject-bank-transfer/${bookingId}`,
-        { reason }
+        { reason: rejectionReason }
       );
       if (data.success) {
-        toast.success("Bank transfer rejected");
+        toast.success("Bank transfer rejected", {
+          position: "top-right",
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+          theme: "colored",
+          style: { backgroundColor: "#F43F5E", color: "white" },
+        });
         fetchBankTransfers(); // Refresh the list
       } else {
-        toast.error(data.message || "Failed to reject transfer");
+        toast.error(data.message || "Failed to reject transfer", {
+          position: "top-right",
+          autoClose: 5000,
+          theme: "colored",
+        });
       }
     } catch (error) {
       console.error("Error rejecting transfer:", error);
@@ -239,11 +302,36 @@ const UserManagement = () => {
         error.response?.data?.message ||
         error.message ||
         "Failed to reject bank transfer";
-      toast.error(errorMessage);
+      toast.error(errorMessage, {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "colored",
+        style: { backgroundColor: "#EF4444", color: "white" },
+      });
     }
   };
 
   const viewReceipt = (transfer) => {
+    // Check if receipt path exists
+    if (!transfer.bankTransferDetails?.receiptPath) {
+      toast.warning("No receipt image available for this transfer", {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        theme: "colored",
+        style: { backgroundColor: "#F59E0B", color: "white" },
+      });
+      return;
+    }
+
     setSelectedReceipt(transfer);
     setShowReceiptModal(true);
   };
@@ -251,39 +339,100 @@ const UserManagement = () => {
   // Handle refund processing
   const handleProcessRefund = async (bookingId, status) => {
     try {
+      // Confirm before processing refund
+      const confirmMessage =
+        status === "processed"
+          ? "Are you sure you want to mark this refund as PROCESSED? This indicates that the money has been returned to the customer."
+          : "Are you sure you want to mark this refund as FAILED? This indicates that the refund could not be processed.";
+
+      if (!window.confirm(confirmMessage)) {
+        return;
+      }
+
+      // If marking as failed, ask for reason
+      let notes = "";
+      if (status === "failed") {
+        notes = window.prompt("Please provide a reason why the refund failed:");
+        if (notes === null) return; // User cancelled
+      } else if (status === "processed") {
+        notes = window.prompt(
+          "Please provide transaction reference or notes (optional):",
+          ""
+        );
+        if (notes === null) notes = ""; // User cancelled, but we'll still process
+      }
+
       const { data } = await api.put(`/api/bookings/${bookingId}/refund`, {
         refundStatus: status,
         processedAt: new Date(),
         processedBy: "Admin", // In real app, get from auth context
+        notes: notes,
       });
 
       if (data.success) {
-        toast.success(`Refund marked as ${status}`);
+        const successMessage =
+          status === "processed"
+            ? "✅ Refund has been marked as PROCESSED successfully"
+            : "❌ Refund has been marked as FAILED";
+
+        toast.success(successMessage, {
+          position: "top-center",
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+          theme: "colored",
+          style: {
+            backgroundColor: status === "processed" ? "#10B981" : "#F43F5E",
+            color: "white",
+            fontWeight: "bold",
+          },
+        });
         fetchRefunds(); // Refresh the list
       } else {
-        toast.error(data.message || "Failed to update refund status");
+        toast.error(data.message || "Failed to update refund status", {
+          theme: "colored",
+        });
       }
     } catch (error) {
       console.error("Error processing refund:", error);
-      toast.error("Failed to process refund");
+      toast.error("Failed to process refund", {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "colored",
+        style: { backgroundColor: "#EF4444", color: "white" },
+      });
     }
   };
 
+  // State for refund details modal
+  const [selectedRefund, setSelectedRefund] = useState(null);
+  const [showRefundModal, setShowRefundModal] = useState(false);
+
   // View refund details
   const viewRefundDetails = (refund) => {
-    // For now, just show an alert with details
-    // In a real app, you might want to open a modal
-    const details = `
-Booking ID: ${refund._id}
-Customer: ${refund.passengerName}
-Email: ${refund.email}
-Amount: LKR ${refund.totalFare}
-Bank: ${refund.cancellationDetails?.refundDetails?.bankName}
-Account: ${refund.cancellationDetails?.refundDetails?.accountNumber}
-Reason: ${refund.cancellationDetails?.reason}
-Status: ${refund.cancellationDetails?.refundStatus}
-    `;
-    alert(details);
+    setSelectedRefund(refund);
+    setShowRefundModal(true);
+
+    // Show a toast notification that refund details are loaded
+    toast.info("Refund details loaded", {
+      position: "top-right",
+      autoClose: 2000,
+      hideProgressBar: true,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      progress: undefined,
+      theme: "colored",
+      style: { backgroundColor: "#3B82F6", color: "white" },
+    });
   };
 
   const viewUserDetails = (user) => {
@@ -1895,6 +2044,233 @@ Status: ${refund.cancellationDetails?.refundStatus}
                       </div>
                     )}
                   </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Refund Details Modal */}
+      {showRefundModal && selectedRefund && (
+        <div className="fixed inset-0 bg-slate-900 bg-opacity-70 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+          <div className="bg-slate-800 rounded-lg max-w-3xl w-full max-h-[90vh] overflow-auto shadow-2xl border border-slate-600">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-semibold text-white flex items-center">
+                  <CreditCard className="w-5 h-5 mr-2 text-indigo-400" />
+                  Refund Details
+                </h3>
+                <button
+                  onClick={() => setShowRefundModal(false)}
+                  className="text-gray-400 hover:text-red-500 cursor-pointer transition-colors"
+                >
+                  <XCircle className="w-6 h-6" />
+                </button>
+              </div>
+
+              <div className="space-y-6">
+                {/* Status Badge */}
+                <div className="flex justify-center">
+                  <span
+                    className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-medium shadow-lg ${
+                      selectedRefund.cancellationDetails?.refundStatus ===
+                      "processed"
+                        ? "bg-green-600 text-green-100"
+                        : selectedRefund.cancellationDetails?.refundStatus ===
+                          "failed"
+                        ? "bg-red-600 text-red-100"
+                        : "bg-yellow-600 text-yellow-100"
+                    }`}
+                  >
+                    {selectedRefund.cancellationDetails?.refundStatus ===
+                    "processed" ? (
+                      <CheckCircle className="w-5 h-5 mr-2" />
+                    ) : selectedRefund.cancellationDetails?.refundStatus ===
+                      "failed" ? (
+                      <XCircle className="w-5 h-5 mr-2" />
+                    ) : (
+                      <Clock className="w-5 h-5 mr-2" />
+                    )}
+                    Refund Status:{" "}
+                    {selectedRefund.cancellationDetails?.refundStatus ||
+                      "pending"}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Booking and Payment Details */}
+                  <div className="bg-slate-700 p-6 rounded-lg">
+                    <h4 className="font-semibold text-white mb-4 pb-2 border-b border-slate-600">
+                      Booking & Payment Details
+                    </h4>
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-gray-400 text-sm">Booking ID</p>
+                        <p className="text-white font-mono">
+                          {selectedRefund._id}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-gray-400 text-sm">Journey</p>
+                        <p className="text-white">
+                          {selectedRefund.boardingPoint} →{" "}
+                          {selectedRefund.dropoffPoint}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-gray-400 text-sm">Journey Date</p>
+                        <p className="text-white">
+                          {formatDate(selectedRefund.journeyDate)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-gray-400 text-sm">Payment Method</p>
+                        <p className="text-white">
+                          {selectedRefund.paymentMethod || "N/A"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-gray-400 text-sm">
+                          Amount to Refund
+                        </p>
+                        <p className="text-white font-semibold text-lg">
+                          {formatCurrency(selectedRefund.totalFare)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Refund Details */}
+                  <div className="bg-slate-700 p-6 rounded-lg">
+                    <h4 className="font-semibold text-white mb-4 pb-2 border-b border-slate-600">
+                      Refund Information
+                    </h4>
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-gray-400 text-sm">Customer Name</p>
+                        <p className="text-white">
+                          {selectedRefund.passengerName}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-gray-400 text-sm">Email</p>
+                        <p className="text-white">{selectedRefund.email}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-400 text-sm">Bank Name</p>
+                        <p className="text-white">
+                          {selectedRefund.cancellationDetails?.refundDetails
+                            ?.bankName || "N/A"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-gray-400 text-sm">Account Number</p>
+                        <p className="text-white font-mono">
+                          {selectedRefund.cancellationDetails?.refundDetails
+                            ?.accountNumber || "N/A"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-gray-400 text-sm">Account Holder</p>
+                        <p className="text-white">
+                          {selectedRefund.cancellationDetails?.refundDetails
+                            ?.accountHolderName || "N/A"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Cancellation Reason */}
+                <div className="bg-slate-700 p-6 rounded-lg">
+                  <h4 className="font-semibold text-white mb-2">
+                    Cancellation Reason
+                  </h4>
+                  <p className="text-gray-300 whitespace-pre-wrap">
+                    {selectedRefund.cancellationDetails?.reason ||
+                      "No reason provided"}
+                  </p>
+                </div>
+
+                {/* Processing Details - only show if processed or failed */}
+                {(selectedRefund.cancellationDetails?.refundStatus ===
+                  "processed" ||
+                  selectedRefund.cancellationDetails?.refundStatus ===
+                    "failed") && (
+                  <div
+                    className={`p-6 rounded-lg border ${
+                      selectedRefund.cancellationDetails?.refundStatus ===
+                      "processed"
+                        ? "bg-green-900/20 border-green-700"
+                        : "bg-red-900/20 border-red-700"
+                    }`}
+                  >
+                    <h4 className="font-semibold text-white mb-2">
+                      Processing Details
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-gray-400 text-sm">Processed On</p>
+                        <p className="text-white">
+                          {formatDate(
+                            selectedRefund.cancellationDetails
+                              ?.refundProcessedAt
+                          ) || "N/A"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-gray-400 text-sm">Processed By</p>
+                        <p className="text-white">
+                          {selectedRefund.cancellationDetails
+                            ?.refundProcessedBy || "System"}
+                        </p>
+                      </div>
+                      {selectedRefund.cancellationDetails?.notes && (
+                        <div className="col-span-2">
+                          <p className="text-gray-400 text-sm">Notes</p>
+                          <p className="text-white">
+                            {selectedRefund.cancellationDetails?.notes}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="flex justify-end gap-3 pt-2">
+                  {selectedRefund.cancellationDetails?.refundStatus ===
+                    "pending" && (
+                    <>
+                      <button
+                        onClick={() => {
+                          setShowRefundModal(false);
+                          handleProcessRefund(selectedRefund._id, "processed");
+                        }}
+                        className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors"
+                      >
+                        <CheckCircle className="w-4 h-4 inline mr-2" />
+                        Mark as Processed
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowRefundModal(false);
+                          handleProcessRefund(selectedRefund._id, "failed");
+                        }}
+                        className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors"
+                      >
+                        <XCircle className="w-4 h-4 inline mr-2" />
+                        Mark as Failed
+                      </button>
+                    </>
+                  )}
+                  <button
+                    onClick={() => setShowRefundModal(false)}
+                    className="px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg text-sm font-medium transition-colors"
+                  >
+                    Close
+                  </button>
                 </div>
               </div>
             </div>

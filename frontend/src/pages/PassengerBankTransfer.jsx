@@ -296,21 +296,6 @@ const PassengerBankTransfer = () => {
                       <span className="text-gray-300">Branch:</span>
                       <span className="font-medium">{bankDetails.branch}</span>
                     </div>
-
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-300">SWIFT Code:</span>
-                      <div className="flex items-center">
-                        <span className="font-medium font-mono">
-                          {bankDetails.swiftCode}
-                        </span>
-                        <button
-                          onClick={() => copyToClipboard(bankDetails.swiftCode)}
-                          className="ml-2 p-1 hover:bg-slate-600 rounded"
-                        >
-                          <Copy size={14} />
-                        </button>
-                      </div>
-                    </div>
                   </div>
 
                   <div className="mt-4 p-3 bg-blue-900/30 border border-blue-700 rounded-lg">

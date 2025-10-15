@@ -34,7 +34,7 @@ export const JourneySection = () => {
               </div>
             </div>
             <img
-              src={assets.topjimg1}
+              src={assets.nightbus}
               alt="Moratuwa → Jaffna"
               className="object-cover w-full h-full"
             />
