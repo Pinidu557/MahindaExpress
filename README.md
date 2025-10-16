@@ -101,18 +101,8 @@ frontend/
    npm install
    ```
 
-3. Create a `.env` file in the backend directory with the following variables:
-   ```env
-   NODE_ENV=development
-   PORT=4000
-   MONGO_URI=your_mongodb_connection_string
-   JWT_SECRET=your_jwt_secret
-   STRIPE_SECRET_KEY=your_stripe_secret_key
-   EMAIL_USER=your_email_address
-   EMAIL_PASS=your_email_password
-   ```
 
-4. Start the backend server:
+3. Start the backend server:
    ```bash
    npm run server
    ```
@@ -128,13 +118,7 @@ frontend/
    npm install
    ```
 
-3. Create a `.env` file in the frontend directory:
-   ```env
-   VITE_API_URL=http://localhost:4000
-   VITE_STRIPE_PUBLIC_KEY=your_stripe_public_key
-   ```
-
-4. Start the development server:
+3. Start the development server:
    ```bash
    npm run dev
    ```
